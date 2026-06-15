@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 export default function PrivateLayout() {
     return (
-        <Tabs screenOptions={{ tabBarActiveTintColor: '#52B28B' }}>
+        <Tabs screenOptions={{ tabBarActiveTintColor: '#52B28B', tabBarStyle: { display: 'none' } }}>
             <Tabs.Screen
                 name="home"
                 options={{

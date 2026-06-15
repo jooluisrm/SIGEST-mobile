@@ -6,6 +6,7 @@ import {
     Text,
     Alert
 } from "react-native";
+import { useRouter } from "expo-router";
 import { SearchAddHeader } from "@/components/gerenciar/search-add-header";
 import { AlunoCard } from "@/components/gerenciar/aluno/aluno-card";
 import { PaginationControl } from "@/components/gerenciar/pagination-control";
@@ -28,6 +29,7 @@ const MOCK_ALUNOS = [
 const ITEMS_PER_PAGE = 5;
 
 export default function Aluno() {
+    const router = useRouter();
     const [searchText, setSearchText] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -59,7 +61,7 @@ export default function Aluno() {
     };
 
     const handleAddPress = () => {
-        Alert.alert("Cadastrar", "Abrir fluxo para cadastrar novo aluno.");
+        router.push("/gerenciar/aluno/cadastro");
     };
 
     const handleViewPress = (name: string) => {

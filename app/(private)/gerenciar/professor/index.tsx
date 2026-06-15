@@ -6,6 +6,7 @@ import {
     Text, 
     Alert 
 } from "react-native";
+import { useRouter } from "expo-router";
 import { SearchAddHeader } from "@/components/gerenciar/search-add-header";
 import { ProfessorCard } from "@/components/gerenciar/professor/professor-card";
 import { PaginationControl } from "@/components/gerenciar/pagination-control";
@@ -25,6 +26,7 @@ const MOCK_PROFESSORES = [
 const ITEMS_PER_PAGE = 5;
 
 export default function Professor() {
+    const router = useRouter();
     const [searchText, setSearchText] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -56,7 +58,7 @@ export default function Professor() {
     };
 
     const handleAddPress = () => {
-        Alert.alert("Cadastrar", "Abrir fluxo para cadastrar novo professor.");
+        router.push("/gerenciar/professor/cadastro");
     };
 
     const handleViewPress = (name: string) => {
