@@ -31,6 +31,15 @@ export default function PrivateLayout() {
                 }}
 
             />
+            
+            {/* Oculta as telas de gerenciamento das abas inferiores */}
+            <Tabs.Screen
+                name="gerenciar"
+                options={{
+                    href: null,
+                    headerShown: false,
+                }}
+            />
         </Tabs>
     );
 }

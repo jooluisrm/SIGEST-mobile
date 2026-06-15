@@ -14,15 +14,13 @@ export default function Home() {
     }
 
     function handleSelectOption(optionId: string) {
-        console.log("Opção selecionada para gerenciar:", optionId);
-        // Exemplo de navegação futura:
-        // router.push(`/(private)/manage/${optionId}`);
+        router.push({ pathname: `/(private)/gerenciar/${optionId}` as any });
     }
 
     return (
         <View style={styles.container}>
             <WelcomeCard />
-            
+
             <View style={styles.gridOptions}>
                 <ButtonMenu
                     title="Gerenciar"
