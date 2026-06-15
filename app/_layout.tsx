@@ -25,7 +25,7 @@ export default function RootLayout() {
                         ),
                         headerRight: () => (
                             <Pressable
-                                onPress={() => router.push("/(public)/login")}
+                                onPress={() => router.push("/login")}
                                 style={({ pressed }) => [
                                     {
                                         backgroundColor: "rgba(255, 255, 255, 0.2)",
@@ -55,6 +55,8 @@ export default function RootLayout() {
                         headerTintColor: "#fff"
                     }}
                 />
+
+                <Stack.Screen name="(private)" options={{ headerShown: false }} />
             </Stack>
         </SafeAreaProvider>
     )

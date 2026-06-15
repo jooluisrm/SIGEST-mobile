@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
@@ -22,10 +23,12 @@ export default function Login() {
     const [password, setPassword] = useState("");
     const [isEmailFocused, setIsEmailFocused] = useState(false);
     const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+    const router = useRouter();
 
     const handleLogin = () => {
         // Implement login action
         console.log("Acessando com:", email, password);
+        router.push("/home");
     };
 
     const handleForgotPassword = () => {
