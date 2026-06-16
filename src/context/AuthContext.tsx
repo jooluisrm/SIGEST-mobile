@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import * as SecureStore from "expo-secure-store";
 import { api } from "../lib/axios";
-import { UserData, LoginResponseSuccess } from "../types/auth";
+import { UserData } from "../types/auth";
+import { loginRequest } from "../api/auth";
 
 interface AuthContextType {
   user: UserData | null;
@@ -39,8 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const response = await api.post("/api/login", { email, password });
-      const successData = response.data as LoginResponseSuccess;
+      const successData = await loginRequest({ email, password });
       
       if (successData.status && successData.data) {
         const userData = successData.data;

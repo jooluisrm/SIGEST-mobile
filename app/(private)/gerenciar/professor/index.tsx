@@ -1,54 +1,44 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
     StyleSheet, 
     View, 
     FlatList, 
     Text, 
-    Alert 
+    Alert,
+    ActivityIndicator
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SearchAddHeader } from "@/components/gerenciar/search-add-header";
 import { ProfessorCard } from "@/components/gerenciar/professor/professor-card";
 import { PaginationControl } from "@/components/gerenciar/pagination-control";
 import { Ionicons } from "@expo/vector-icons";
-
-// Mock professor list
-const MOCK_PROFESSORES = [
-    { id: "1", name: "Prof. Carlos Silva", email: "carlos.silva@example.com", phone: "(81) 98888-7777" },
-    { id: "2", name: "Profa. Amanda Lima", email: "amanda.lima@example.com", phone: "(81) 97777-6666" },
-    { id: "3", name: "Prof. Roberto Santos", email: "roberto.santos@example.com", phone: "(81) 96666-5555" },
-    { id: "4", name: "Profa. Patrícia Oliveira", email: "patricia.oliveira@example.com", phone: "(81) 95555-4444" },
-    { id: "5", name: "Prof. Eduardo Costa", email: "eduardo.costa@example.com", phone: "(81) 94444-3333" },
-    { id: "6", name: "Profa. Juliana Fernandes", email: "juliana.fernandes@example.com", phone: "(81) 93333-2222" },
-    { id: "7", name: "Prof. Marcos Rocha", email: "marcos.rocha@example.com", phone: "(81) 92222-1111" },
-];
-
-const ITEMS_PER_PAGE = 5;
+import { useProfessorsQuery } from "../../../../src/api/professor";
 
 export default function Professor() {
     const router = useRouter();
     const [searchText, setSearchText] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
 
-    // Filter professors by name, email, or phone
-    const filteredProfessores = MOCK_PROFESSORES.filter(
-        (professor) =>
-            professor.name.toLowerCase().includes(searchText.toLowerCase()) ||
-            professor.email.toLowerCase().includes(searchText.toLowerCase()) ||
-            professor.phone.includes(searchText)
-    );
+    // Consulta real usando o TanStack Query
+    const { data, isLoading, error } = useProfessorsQuery(searchText, currentPage);
 
-    // Pagination calculations
-    const totalPages = Math.ceil(filteredProfessores.length / ITEMS_PER_PAGE);
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const paginatedProfessores = filteredProfessores.slice(
-        startIndex,
-        startIndex + ITEMS_PER_PAGE
-    );
+    // Mapeamento dos resultados recebidos da API
+    const professors = data?.data || [];
+    const totalPages = (data && "meta" in data) ? data.meta.last_page : 1;
+
+    useEffect(() => {
+        if (error) {
+            console.error("Erro ao carregar professores:", error);
+            Alert.alert(
+                "Erro de Conexão", 
+                "Não foi possível buscar a lista de professores. Verifique a conexão com a API."
+            );
+        }
+    }, [error]);
 
     const handleSearchChange = (text: string) => {
         setSearchText(text);
-        setCurrentPage(1); // Reset to page 1 on search
+        setCurrentPage(1); // Reinicia para a página 1 ao realizar busca
     };
 
     const handlePageChange = (page: number) => {
@@ -79,35 +69,51 @@ export default function Professor() {
                     text: "Excluir", 
                     style: "destructive", 
                     onPress: () => {
-                        console.log(`Professor ${id} excluído`);
+                        console.log(`Excluir professor ID: ${id}`);
                     } 
                 }
             ]
         );
     };
 
+    if (isLoading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#52B28B" />
+                <Text style={styles.loadingText}>Carregando professores...</Text>
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
-            {/* Header with Search and Add buttons */}
+            {/* Header com busca e botão de adicionar */}
             <SearchAddHeader
                 value={searchText}
                 onChangeText={handleSearchChange}
-                placeholder="Buscar professor"
+                placeholder="Buscar por nome ou CPF"
                 onAddPress={handleAddPress}
             />
 
-            {/* List of Professor cards */}
+            {/* Aviso visual caso o termo de busca seja muito curto */}
+            {searchText.trim().length > 0 && searchText.trim().length < 3 && (
+                <Text style={styles.searchHelperText}>
+                    Digite pelo menos 3 caracteres para buscar.
+                </Text>
+            )}
+
+            {/* Lista de professores vindos da API */}
             <FlatList
-                data={paginatedProfessores}
-                keyExtractor={(item) => item.id}
+                data={professors}
+                keyExtractor={(item) => String(item.id_professor)}
                 renderItem={({ item }) => (
                     <ProfessorCard
                         name={item.name}
                         email={item.email}
-                        phone={item.phone}
+                        phone={item.celular || item.telefone || "Não cadastrado"}
                         onView={() => handleViewPress(item.name)}
                         onEdit={() => handleEditPress(item.name)}
-                        onDelete={() => handleDeletePress(item.id, item.name)}
+                        onDelete={() => handleDeletePress(String(item.id_professor), item.name)}
                     />
                 )}
                 contentContainerStyle={styles.listContent}
@@ -120,7 +126,7 @@ export default function Professor() {
                 }
             />
 
-            {/* Pagination Controls */}
+            {/* Controle de Paginação do Laravel */}
             <PaginationControl
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -133,7 +139,7 @@ export default function Professor() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#f9fafb", // Light background matching dashboard design
+        backgroundColor: "#f9fafb",
         paddingHorizontal: 16,
         paddingTop: 16,
     },
@@ -152,5 +158,24 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: "#6b7280",
         fontWeight: "500",
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#f9fafb",
+    },
+    loadingText: {
+        marginTop: 12,
+        fontSize: 15,
+        color: "#6b7280",
+        fontWeight: "500",
+    },
+    searchHelperText: {
+        fontSize: 12,
+        color: "#6b7280",
+        fontStyle: "italic",
+        marginBottom: 8,
+        marginLeft: 4,
     },
 });
