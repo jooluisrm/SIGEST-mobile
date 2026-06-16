@@ -1,53 +1,44 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
     StyleSheet, 
     View, 
     FlatList, 
     Text, 
-    Alert 
+    Alert,
+    ActivityIndicator
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SearchAddHeader } from "@/components/gerenciar/search-add-header";
 import { UsuarioCard } from "@/components/gerenciar/usuario/usuario-card";
 import { PaginationControl } from "@/components/gerenciar/pagination-control";
 import { Ionicons } from "@expo/vector-icons";
-
-// Mock user list
-const MOCK_USUARIOS = [
-    { id: "1", name: "João Silva", email: "joao.silva@example.com", phone: "(81) 98888-7777" },
-    { id: "2", name: "Maria Santos", email: "maria.santos@example.com", phone: "(81) 97777-6666" },
-    { id: "3", name: "Pedro Oliveira", email: "pedro.oliveira@example.com", phone: "(81) 96666-5555" },
-    { id: "4", name: "Ana Souza", email: "ana.souza@example.com", phone: "(81) 95555-4444" },
-    { id: "5", name: "Lucas Costa", email: "lucas.costa@example.com", phone: "(81) 94444-3333" },
-    { id: "6", name: "Clara Rocha", email: "clara.rocha@example.com", phone: "(81) 93333-2222" },
-];
-
-const ITEMS_PER_PAGE = 5;
+import { useUsuariosQuery } from "../../../../src/api/usuario";
 
 export default function Usuario() {
     const router = useRouter();
     const [searchText, setSearchText] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
 
-    // Filter users by name, email, or phone
-    const filteredUsuarios = MOCK_USUARIOS.filter(
-        (usuario) =>
-            usuario.name.toLowerCase().includes(searchText.toLowerCase()) ||
-            usuario.email.toLowerCase().includes(searchText.toLowerCase()) ||
-            usuario.phone.includes(searchText)
-    );
+    // Consulta real usando o TanStack Query
+    const { data, isLoading, error } = useUsuariosQuery(searchText, currentPage);
 
-    // Pagination calculations
-    const totalPages = Math.ceil(filteredUsuarios.length / ITEMS_PER_PAGE);
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const paginatedUsuarios = filteredUsuarios.slice(
-        startIndex,
-        startIndex + ITEMS_PER_PAGE
-    );
+    // Mapeamento dos resultados recebidos da API (data pode ser null se o resultado for vazio)
+    const usuarios = data?.data || [];
+    const totalPages = (data && "meta" in data) ? data.meta.last_page : 1;
+
+    useEffect(() => {
+        if (error) {
+            console.error("Erro ao carregar servidores:", error);
+            Alert.alert(
+                "Erro de Conexão", 
+                "Não foi possível buscar a lista de servidores. Verifique a conexão com a API."
+            );
+        }
+    }, [error]);
 
     const handleSearchChange = (text: string) => {
         setSearchText(text);
-        setCurrentPage(1); // Reset to page 1 on search
+        setCurrentPage(1); // Reinicia para a página 1 ao realizar busca
     };
 
     const handlePageChange = (page: number) => {
@@ -78,35 +69,51 @@ export default function Usuario() {
                     text: "Excluir", 
                     style: "destructive", 
                     onPress: () => {
-                        console.log(`Usuário ${id} excluído`);
+                        console.log(`Excluir usuário ID: ${id}`);
                     } 
                 }
             ]
         );
     };
 
+    if (isLoading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#52B28B" />
+                <Text style={styles.loadingText}>Carregando servidores...</Text>
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
-            {/* Header with Search and Add buttons */}
+            {/* Header com busca e botão de adicionar */}
             <SearchAddHeader
                 value={searchText}
                 onChangeText={handleSearchChange}
-                placeholder="Buscar usuário"
+                placeholder="Buscar por nome ou CPF"
                 onAddPress={handleAddPress}
             />
 
-            {/* List of User cards */}
+            {/* Aviso visual caso o termo de busca seja muito curto */}
+            {searchText.trim().length > 0 && searchText.trim().length < 3 && (
+                <Text style={styles.searchHelperText}>
+                    Digite pelo menos 3 caracteres para buscar.
+                </Text>
+            )}
+
+            {/* Lista de usuários vindos da API */}
             <FlatList
-                data={paginatedUsuarios}
-                keyExtractor={(item) => item.id}
+                data={usuarios}
+                keyExtractor={(item) => String(item.id_servidor)}
                 renderItem={({ item }) => (
                     <UsuarioCard
                         name={item.name}
                         email={item.email}
-                        phone={item.phone}
+                        phone={item.celular || item.telefone || "Não cadastrado"}
                         onView={() => handleViewPress(item.name)}
                         onEdit={() => handleEditPress(item.name)}
-                        onDelete={() => handleDeletePress(item.id, item.name)}
+                        onDelete={() => handleDeletePress(String(item.id_servidor), item.name)}
                     />
                 )}
                 contentContainerStyle={styles.listContent}
@@ -119,7 +126,7 @@ export default function Usuario() {
                 }
             />
 
-            {/* Pagination Controls */}
+            {/* Controle de Paginação do Laravel */}
             <PaginationControl
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -132,7 +139,7 @@ export default function Usuario() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#f9fafb", // Light background matching dashboard design
+        backgroundColor: "#f9fafb",
         paddingHorizontal: 16,
         paddingTop: 16,
     },
@@ -151,5 +158,24 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: "#6b7280",
         fontWeight: "500",
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#f9fafb",
+    },
+    loadingText: {
+        marginTop: 12,
+        fontSize: 15,
+        color: "#6b7280",
+        fontWeight: "500",
+    },
+    searchHelperText: {
+        fontSize: 12,
+        color: "#6b7280",
+        fontStyle: "italic",
+        marginBottom: 8,
+        marginLeft: 4,
     },
 });
