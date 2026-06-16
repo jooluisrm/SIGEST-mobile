@@ -1,8 +1,22 @@
 import { Tabs } from "expo-router";
-import { Image, Pressable, Text } from "react-native";
+import { Image, Pressable, Text, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../../src/context/AuthContext";
 
 export default function PrivateLayout() {
+    const { user, signOut } = useAuth();
+
+    const handleLogout = () => {
+        Alert.alert(
+            "Sair",
+            "Deseja realmente sair da sua conta?",
+            [
+                { text: "Cancelar", style: "cancel" },
+                { text: "Sair", style: "destructive", onPress: signOut }
+            ]
+        );
+    };
+
     return (
         <Tabs screenOptions={{ tabBarActiveTintColor: '#52B28B', tabBarStyle: { display: 'none' } }}>
             <Tabs.Screen
@@ -21,9 +35,15 @@ export default function PrivateLayout() {
                         />
                     ),
                     headerRight: () => (
-                        <Pressable style={{ flexDirection: "row", alignItems: "center", marginRight: 16 }}>
+                        <Pressable 
+                            onPress={handleLogout}
+                            style={({ pressed }) => [
+                                { flexDirection: "row", alignItems: "center", marginRight: 16 },
+                                pressed && { opacity: 0.7 }
+                            ]}
+                        >
                             <Text style={{ color: "#ffffff", fontSize: 14, fontWeight: "600", marginRight: 8 }}>
-                                Fulano
+                                {user?.nome ? user.nome.split(" ")[0] : "Usuário"}
                             </Text>
                             <Ionicons name="person-circle" size={30} color="#ffffff" />
                         </Pressable>

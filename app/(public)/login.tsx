@@ -10,11 +10,13 @@ import {
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    Dimensions
+    Dimensions,
+    ActivityIndicator
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useAuth } from "../../src/context/AuthContext";
 
 const { width } = Dimensions.get("window");
 
@@ -23,12 +25,50 @@ export default function Login() {
     const [password, setPassword] = useState("");
     const [isEmailFocused, setIsEmailFocused] = useState(false);
     const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [generalError, setGeneralError] = useState("");
+    const [fieldErrors, setFieldErrors] = useState<{ email?: string[]; password?: string[] }>({});
+    
     const router = useRouter();
+    const { signIn } = useAuth();
 
-    const handleLogin = () => {
-        // Implement login action
-        console.log("Acessando com:", email, password);
-        router.push("/home");
+    const handleLogin = async () => {
+        // Validação local prévia
+        if (!email.trim() || !password.trim()) {
+            setGeneralError("Por favor, preencha todos os campos.");
+            return;
+        }
+
+        setIsLoading(true);
+        setGeneralError("");
+        setFieldErrors({});
+
+        try {
+            await signIn(email, password);
+            // No sucesso, o AuthProvider atualiza o estado e o redirecionamento é automático no _layout.tsx
+        } catch (error: any) {
+            console.error("Erro ao fazer login:", error);
+
+            if (error.response) {
+                const status = error.response.status;
+                const responseData = error.response.data;
+
+                if (status === 401) {
+                    setGeneralError(responseData.message || "E-mail ou senha incorretos.");
+                } else if (status === 422) {
+                    if (responseData.errors) {
+                        setFieldErrors(responseData.errors);
+                    }
+                    setGeneralError(responseData.message || "Erro de validação nos dados enviados.");
+                } else {
+                    setGeneralError("Erro no servidor. Tente novamente mais tarde.");
+                }
+            } else {
+                setGeneralError("Não foi possível conectar ao servidor. Verifique a conexão com a API.");
+            }
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleForgotPassword = () => {
@@ -64,11 +104,19 @@ export default function Login() {
                                     style={styles.logo}
                                 />
 
+                                {/* Alerta Geral de Erro */}
+                                {generalError ? (
+                                    <View style={styles.errorBanner}>
+                                        <Text style={styles.errorBannerText}>{generalError}</Text>
+                                    </View>
+                                ) : null}
+
                                 {/* E-mail Input */}
                                 <TextInput
                                     style={[
                                         styles.input,
-                                        isEmailFocused && styles.inputFocused
+                                        isEmailFocused && styles.inputFocused,
+                                        fieldErrors.email && styles.inputError
                                     ]}
                                     placeholder="E-mail"
                                     placeholderTextColor="rgba(30, 58, 39, 0.6)"
@@ -79,13 +127,18 @@ export default function Login() {
                                     autoCorrect={false}
                                     onFocus={() => setIsEmailFocused(true)}
                                     onBlur={() => setIsEmailFocused(false)}
+                                    editable={!isLoading}
                                 />
+                                {fieldErrors.email ? (
+                                    <Text style={styles.fieldErrorText}>{fieldErrors.email[0]}</Text>
+                                ) : null}
 
                                 {/* Password Input */}
                                 <TextInput
                                     style={[
                                         styles.input,
-                                        isPasswordFocused && styles.inputFocused
+                                        isPasswordFocused && styles.inputFocused,
+                                        fieldErrors.password && styles.inputError
                                     ]}
                                     placeholder="Senha"
                                     placeholderTextColor="rgba(30, 58, 39, 0.6)"
@@ -96,17 +149,27 @@ export default function Login() {
                                     autoCorrect={false}
                                     onFocus={() => setIsPasswordFocused(true)}
                                     onBlur={() => setIsPasswordFocused(false)}
+                                    editable={!isLoading}
                                 />
+                                {fieldErrors.password ? (
+                                    <Text style={styles.fieldErrorText}>{fieldErrors.password[0]}</Text>
+                                ) : null}
 
                                 {/* Submit Button */}
                                 <Pressable
                                     style={({ pressed }) => [
                                         styles.button,
-                                        pressed && styles.buttonPressed
+                                        pressed && styles.buttonPressed,
+                                        isLoading && styles.buttonDisabled
                                     ]}
                                     onPress={handleLogin}
+                                    disabled={isLoading}
                                 >
-                                    <Text style={styles.buttonText}>Acessar</Text>
+                                    {isLoading ? (
+                                        <ActivityIndicator color="#ffffff" />
+                                    ) : (
+                                        <Text style={styles.buttonText}>Acessar</Text>
+                                    )}
                                 </Pressable>
 
                                 {/* Forgot Password Link */}
@@ -116,6 +179,7 @@ export default function Login() {
                                         pressed && styles.linkPressed
                                     ]}
                                     onPress={handleForgotPassword}
+                                    disabled={isLoading}
                                 >
                                     <Text style={styles.forgotPasswordText}>Recuperar Senha</Text>
                                 </Pressable>
@@ -127,6 +191,7 @@ export default function Login() {
                                         pressed && styles.linkPressed
                                     ]}
                                     onPress={handleRegister}
+                                    disabled={isLoading}
                                 >
                                     <Text style={styles.registerText}>
                                         <Text style={styles.registerTextGreen}>Sem cadastro? </Text>
@@ -256,5 +321,41 @@ const styles = StyleSheet.create({
     registerTextWhite: {
         color: "#ffffff",
         fontWeight: "bold",
+    },
+    errorBanner: {
+        backgroundColor: "rgba(211, 47, 47, 0.25)",
+        borderColor: "#ff5252",
+        borderWidth: 1.5,
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        marginBottom: 16,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    errorBannerText: {
+        color: "#ffffff",
+        fontSize: 14,
+        fontWeight: "600",
+        textAlign: "center",
+    },
+    inputError: {
+        borderColor: "#ff5252",
+        backgroundColor: "rgba(211, 47, 47, 0.15)",
+    },
+    fieldErrorText: {
+        color: "#ff5252",
+        fontSize: 12,
+        fontWeight: "700",
+        marginTop: -12,
+        marginBottom: 12,
+        marginLeft: 16,
+        textShadowColor: "rgba(0, 0, 0, 0.3)",
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 1,
+    },
+    buttonDisabled: {
+        backgroundColor: "#558B6E",
+        opacity: 0.8,
     },
 });
