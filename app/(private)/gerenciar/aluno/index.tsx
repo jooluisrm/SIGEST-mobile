@@ -1,57 +1,44 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     StyleSheet,
     View,
     FlatList,
     Text,
-    Alert
+    Alert,
+    ActivityIndicator
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SearchAddHeader } from "@/components/gerenciar/search-add-header";
 import { AlunoCard } from "@/components/gerenciar/aluno/aluno-card";
 import { PaginationControl } from "@/components/gerenciar/pagination-control";
 import { Ionicons } from "@expo/vector-icons";
-
-// Mock student list based on the desktop web screenshot
-const MOCK_ALUNOS = [
-    { id: "1", name: "Isabelly Velasques", email: "meireles.jeronimo@example.net", phone: "(84) 98966-1852" },
-    { id: "2", name: "Taís Ramires Neto", email: "zrivera@example.com", phone: "(37) 92387-4105" },
-    { id: "3", name: "Sra. Rafaela Pâmela Jimenes", email: "david.franco@example.com", phone: "(91) 96240-3997" },
-    { id: "4", name: "Srta. Regiane Santiago Galindo", email: "emily.dasdores@example.com", phone: "(62) 99204-9188" },
-    { id: "5", name: "Felipe D'ávila Romero", email: "abgail.duarte@example.org", phone: "(55) 90689-3408" },
-    { id: "6", name: "Priscila Maraisa Lourenço Neto", email: "vila.miriam@example.org", phone: "(79) 3699-2674" },
-    { id: "7", name: "Sra. Janaina Duarte", email: "kauan.colaco@example.com", phone: "(74) 3751-1943" },
-    { id: "8", name: "Sr. Breno Molina Neto", email: "paes.isabella@example.net", phone: "(31) 97369-8755" },
-    { id: "9", name: "Sr. Emílio Batista Salazar Filho", email: "davi70@example.net", phone: "(43) 90612-3829" },
-    { id: "10", name: "Dr. Marcos Duarte Jr.", email: "willian32@example.net", phone: "(92) 3162-8887" },
-];
-
-const ITEMS_PER_PAGE = 5;
+import { useAlunosQuery } from "../../../../src/api/aluno";
 
 export default function Aluno() {
     const router = useRouter();
     const [searchText, setSearchText] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
 
-    // Filter students by name, email, or phone
-    const filteredAlunos = MOCK_ALUNOS.filter(
-        (aluno) =>
-            aluno.name.toLowerCase().includes(searchText.toLowerCase()) ||
-            aluno.email.toLowerCase().includes(searchText.toLowerCase()) ||
-            aluno.phone.includes(searchText)
-    );
+    // Consulta real usando o TanStack Query
+    const { data, isLoading, error } = useAlunosQuery(searchText, currentPage);
 
-    // Pagination calculations
-    const totalPages = Math.ceil(filteredAlunos.length / ITEMS_PER_PAGE);
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const paginatedAlunos = filteredAlunos.slice(
-        startIndex,
-        startIndex + ITEMS_PER_PAGE
-    );
+    // Mapeamento dos resultados recebidos da API (data pode ser null na resposta de sucesso geral vazia)
+    const alumnos = data?.data || [];
+    const totalPages = (data && "meta" in data) ? data.meta.last_page : 1;
+
+    useEffect(() => {
+        if (error) {
+            console.error("Erro ao carregar alunos:", error);
+            Alert.alert(
+                "Erro de Conexão",
+                "Não foi possível buscar a lista de alunos. Verifique a conexão com a API."
+            );
+        }
+    }, [error]);
 
     const handleSearchChange = (text: string) => {
         setSearchText(text);
-        setCurrentPage(1); // Reset to page 1 on search
+        setCurrentPage(1); // Reinicia para a página 1 ao realizar busca
     };
 
     const handlePageChange = (page: number) => {
@@ -82,35 +69,51 @@ export default function Aluno() {
                     text: "Excluir",
                     style: "destructive",
                     onPress: () => {
-                        console.log(`Aluno ${id} excluído`);
+                        console.log(`Excluir aluno ID: ${id}`);
                     }
                 }
             ]
         );
     };
 
+    if (isLoading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#52B28B" />
+                <Text style={styles.loadingText}>Carregando alunos...</Text>
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
-            {/* Header with Search and Add buttons */}
+            {/* Header com busca e botão de adicionar */}
             <SearchAddHeader
                 value={searchText}
                 onChangeText={handleSearchChange}
-                placeholder="Buscar aluno"
+                placeholder="Buscar por nome de aluno"
                 onAddPress={handleAddPress}
             />
 
-            {/* List of Student cards */}
+            {/* Aviso visual caso o termo de busca seja muito curto */}
+            {searchText.trim().length > 0 && searchText.trim().length < 3 && (
+                <Text style={styles.searchHelperText}>
+                    Digite pelo menos 3 caracteres para buscar.
+                </Text>
+            )}
+
+            {/* Lista de alunos vindos da API */}
             <FlatList
-                data={paginatedAlunos}
-                keyExtractor={(item) => item.id}
+                data={alumnos}
+                keyExtractor={(item) => String(item.id)}
                 renderItem={({ item }) => (
                     <AlunoCard
                         name={item.name}
                         email={item.email}
-                        phone={item.phone}
+                        phone={item.celular || item.telefone || "Não cadastrado"}
                         onView={() => handleViewPress(item.name)}
                         onEdit={() => handleEditPress(item.name)}
-                        onDelete={() => handleDeletePress(item.id, item.name)}
+                        onDelete={() => handleDeletePress(String(item.id), item.name)}
                     />
                 )}
                 contentContainerStyle={styles.listContent}
@@ -123,7 +126,7 @@ export default function Aluno() {
                 }
             />
 
-            {/* Pagination Controls */}
+            {/* Controle de Paginação do Laravel */}
             <PaginationControl
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -136,7 +139,7 @@ export default function Aluno() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#f9fafb", // Light background matching dashboard design
+        backgroundColor: "#f9fafb",
         paddingHorizontal: 16,
         paddingTop: 16,
     },
@@ -155,5 +158,24 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: "#6b7280",
         fontWeight: "500",
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#f9fafb",
+    },
+    loadingText: {
+        marginTop: 12,
+        fontSize: 15,
+        color: "#6b7280",
+        fontWeight: "500",
+    },
+    searchHelperText: {
+        fontSize: 12,
+        color: "#6b7280",
+        fontStyle: "italic",
+        marginBottom: 8,
+        marginLeft: 4,
     },
 });
