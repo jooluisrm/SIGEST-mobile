@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { Alert } from "react-native";
-import { useRouter } from "expo-router";
+import React, { useState, useEffect } from "react";
+import { Alert, View, ActivityIndicator, StyleSheet, Text } from "react-native";
+import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
 import { CadastroFormPerson } from "@/components/gerenciar/cadastro-form-person";
-import { useCreateAlunoMutation } from "@/api/aluno";
-import { CreateAlunoRequest } from "@/types/aluno";
+import { useCreateAlunoMutation, useAlunoQuery, useUpdateAlunoMutation } from "@/api/aluno";
+import { CreateAlunoRequest, UpdateAlunoRequest } from "@/types/aluno";
 import axios from "axios";
 
 function parseDateBRToISO(dateStr: string): string {
@@ -13,6 +13,14 @@ function parseDateBRToISO(dateStr: string): string {
         const month = parts[1].padStart(2, "0");
         const year = parts[2];
         return `${year}-${month}-${day}`;
+    }
+    return dateStr;
+}
+
+function formatDateISOToBR(dateStr: string): string {
+    const parts = dateStr.split("-");
+    if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
     }
     return dateStr;
 }
@@ -27,6 +35,16 @@ function mapPeriodToId(period: string): number | null {
     }
 }
 
+function mapPeriodIdToName(periodId: number | null): string {
+    switch (periodId) {
+        case 1: return "1º Ano";
+        case 2: return "2º Ano";
+        case 3: return "3º Ano";
+        case 4: return "4º Ano";
+        default: return "";
+    }
+}
+
 function mapTurmaToId(turma: string): number | null {
     switch (turma) {
         case "Turma A": return 1;
@@ -36,10 +54,59 @@ function mapTurmaToId(turma: string): number | null {
     }
 }
 
+function mapTurmaIdToName(classroomId: number | null): string {
+    switch (classroomId) {
+        case 1: return "Turma A";
+        case 2: return "Turma B";
+        case 3: return "Turma C";
+        default: return "";
+    }
+}
+
+function mapAlunoToForm(aluno: any): any {
+    return {
+        nomeCompleto: aluno.name || "",
+        nomePai: aluno.nome_pai || "",
+        nomeMae: aluno.nome_mae || "",
+        cpf: aluno.cpf || "",
+        rg: aluno.rg || "",
+        genero: aluno.genero || "",
+        dataNascimento: aluno.data_nascimento ? formatDateISOToBR(aluno.data_nascimento) : "",
+        telefone: aluno.telefone || "",
+        celular: aluno.celular || "",
+        email: aluno.email || "",
+        deficiencia: aluno.deficiencia && aluno.deficiencia !== "Nenhuma" ? "Sim" : "Não",
+        qualDeficiencia: aluno.deficiencia && aluno.deficiencia !== "Nenhuma" ? aluno.deficiencia : "",
+        logradouro: aluno.logradouro || "",
+        numero: aluno.numero || "",
+        bairro: aluno.bairro || "",
+        complemento: aluno.complemento || "",
+        estado: aluno.estado || "",
+        cidade: aluno.cidade || "",
+        matricula: aluno.matricula || "",
+        periodo: mapPeriodIdToName(aluno.period_id),
+        turma: mapTurmaIdToName(aluno.classroom_id),
+        status: aluno.status ? "Ativo" : "Inativo",
+    };
+}
+
 export default function CadastroAluno() {
     const router = useRouter();
-    const { mutateAsync, isPending } = useCreateAlunoMutation();
+    const navigation = useNavigation();
+    const { id } = useLocalSearchParams<{ id?: string }>();
+    
+    // Mutations & Queries
+    const { mutateAsync: createAluno, isPending: isCreating } = useCreateAlunoMutation();
+    const { mutateAsync: updateAluno, isPending: isUpdating } = useUpdateAlunoMutation();
+    const { data: queryData, isLoading: isLoadingQuery } = useAlunoQuery(id || "");
+    
     const [errorMessages, setErrorMessages] = useState<Record<string, string[]>>({});
+
+    useEffect(() => {
+        navigation.setOptions({
+            title: id ? "Editar Aluno" : "Cadastrar Aluno"
+        });
+    }, [id, navigation]);
 
     const handleClearError = (field: string) => {
         setErrorMessages(prev => {
@@ -58,8 +125,8 @@ export default function CadastroAluno() {
         const cleanTelefone = dados.telefone.replace(/\D/g, "");
         const cleanCelular = dados.celular.replace(/\D/g, "");
         
-        // Build the payload
-        const payload: CreateAlunoRequest = {
+        // Build the payload (name is always required/sent for both create & update)
+        const payload: any = {
             name: dados.nomeCompleto,
             cpf: cleanCpf,
             rg: cleanRg,
@@ -84,11 +151,16 @@ export default function CadastroAluno() {
         };
 
         try {
-            await mutateAsync(payload);
-            Alert.alert("Sucesso", "Aluno cadastrado com sucesso!");
+            if (id) {
+                await updateAluno({ id, payload: payload as UpdateAlunoRequest });
+                Alert.alert("Sucesso", "Aluno atualizado com sucesso!");
+            } else {
+                await createAluno(payload as CreateAlunoRequest);
+                Alert.alert("Sucesso", "Aluno cadastrado com sucesso!");
+            }
             router.back();
         } catch (error: any) {
-            console.error("Erro ao cadastrar aluno:", error);
+            console.error("Erro ao salvar aluno:", error);
             if (axios.isAxiosError(error) && error.response) {
                 const responseData = error.response.data;
                 if (error.response.status === 422 && responseData?.mensagem) {
@@ -98,7 +170,7 @@ export default function CadastroAluno() {
                         "Alguns campos possuem erros. Verifique as mensagens marcadas em vermelho no formulário."
                     );
                 } else {
-                    const msg = responseData?.message || "Ocorreu um erro ao cadastrar o aluno.";
+                    const msg = responseData?.message || "Ocorreu um erro ao salvar o aluno.";
                     Alert.alert("Erro", msg);
                 }
             } else {
@@ -107,14 +179,41 @@ export default function CadastroAluno() {
         }
     };
 
+    if (id && isLoadingQuery) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#52B28B" />
+                <Text style={styles.loadingText}>Buscando dados do aluno...</Text>
+            </View>
+        );
+    }
+
+    const initialData = queryData?.data ? mapAlunoToForm(queryData.data) : undefined;
+
     return (
         <CadastroFormPerson 
             tipo="aluno" 
             onSubmit={handleSubmit}
             onCancel={() => router.back()}
-            isLoading={isPending}
+            isLoading={isCreating || isUpdating}
             errorMessages={errorMessages}
             onClearError={handleClearError}
+            initialData={initialData}
         />
     );
 }
+
+const styles = StyleSheet.create({
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#f9fafb",
+    },
+    loadingText: {
+        marginTop: 12,
+        fontSize: 15,
+        color: "#6b7280",
+        fontWeight: "500",
+    },
+});

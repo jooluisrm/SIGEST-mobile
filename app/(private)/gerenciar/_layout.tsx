@@ -42,6 +42,12 @@ export default function GerenciarLayout() {
                 }}
             />
             <Stack.Screen
+                name="aluno/[id]"
+                options={{
+                    title: "Perfil do Aluno",
+                }}
+            />
+            <Stack.Screen
                 name="usuario/index"
                 options={{
                     title: "Gerenciar Usuários",
@@ -54,6 +60,12 @@ export default function GerenciarLayout() {
                 }}
             />
             <Stack.Screen
+                name="usuario/[id]"
+                options={{
+                    title: "Perfil do Usuário",
+                }}
+            />
+            <Stack.Screen
                 name="professor/index"
                 options={{
                     title: "Gerenciar Professores",
@@ -63,6 +75,12 @@ export default function GerenciarLayout() {
                 name="professor/cadastro"
                 options={{
                     title: "Cadastrar Professor",
+                }}
+            />
+            <Stack.Screen
+                name="professor/[id]"
+                options={{
+                    title: "Perfil do Professor",
                 }}
             />
             <Stack.Screen

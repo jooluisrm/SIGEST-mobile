@@ -81,24 +81,39 @@ Em vez do tradicional `errors` do Laravel, a API customizada retorna as mensagen
 ## 4. Tipos TypeScript e APIs do Frontend
 
 Os tipos TypeScript estão definidos em [professor.ts](file:///c:/Users/joaol/Documents/React%20Native/sigest-mobile/src/types/professor.ts):
+* `GetProfessorResponse`: Resposta de sucesso (200 OK) ao buscar um professor específico.
 * `CreateProfessorRequest`: Estrutura do payload de cadastro do professor.
-* `CreateProfessorSuccessResponse`: Sucesso (201 Created) retornando dados unificados do usuário e do professor.
-* `ValidationErrorResponse`: Resposta de validação (422) contendo o dicionário com a chave `mensagem`.
+* `CreateProfessorSuccessResponse`: Sucesso (201 Created) unificando dados de usuário e professor.
+* `UpdateProfessorRequest`: Payload de edição do professor (campos opcionais). O campo `password` é removido/ignorado.
+* `UpdateProfessorSuccessResponse`: Resposta de sucesso (200 OK) ao atualizar.
+* `DeleteProfessorResponse`: Sucesso (204 No Content) ao deletar.
 
 A integração está centralizada em [professor.ts (API)](file:///c:/Users/joaol/Documents/React%20Native/sigest-mobile/src/api/professor.ts):
-```typescript
-export async function createProfessor(payload: CreateProfessorRequest) {
-  const { data } = await api.post<CreateProfessorSuccessResponse>("/professors", payload);
-  return data;
-}
+* **getProfessorById:** `GET /professors/{id}`
+* **useProfessorQuery:** Busca dados de um único professor.
+* **updateProfessor:** `PUT /professors/{id}`
+* **useUpdateProfessorMutation:** Salva edições no professor.
+* **deleteProfessor:** `DELETE /professors/{id}`
+* **useDeleteProfessorMutation:** Remove o professor do banco e invalida cache.
 
-export function useCreateProfessorMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: createProfessor,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["professors"] });
-    },
-  });
-}
-```
+---
+
+## 5. Visualização Detalhada, Edição e Exclusão
+
+### A. Detalhe do Professor (Visualização)
+* **Endpoint:** `GET /api/professors/{id}` (onde `{id}` é o `id_professor`)
+* **Tratativas no Front:**
+  * **Tratamento de 404 (Não Encontrado):** Se o registro não for localizado, o frontend intercepta e exibe uma mensagem indicando indisponibilidade do registro, retornando à listagem principal.
+  * **Tratamento de Nulos:** Campos opcionais no backend (ex: `genero`, `complemento`) podem vir como `null`. Devem ser tratados como strings vazias ou omitidos para evitar erros de renderização.
+
+### B. Edição do Professor
+* **Endpoint:** `PUT /api/professors/{id}` (onde `{id}` é o `id_professor`)
+* **Atenção (Backend):** O campo `password` é expressamente ignorado pelo backend no update. Portanto, esta rota de edição não permite a atualização de senhas. Se o campo for enviado, ele será descartado.
+* **Tratativa:** O formulário de edição do frontend não precisa ou não deve processar ou exigir o campo de senha.
+
+### C. Exclusão do Professor
+* **Endpoint:** `DELETE /api/professors/{id}` (onde `{id}` é o `id_professor`)
+* **Funcionamento:** Exclui o registro na tabela `users`. Por cascata (`onDelete('cascade')`), o registro na tabela `professors` correspondente é removido do banco.
+* **Retorno:** Status `204 No Content` (sem corpo).
+* **Tratativa:** Invalidar query no React Query e redirecionar para a listagem.
+

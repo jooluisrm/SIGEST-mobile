@@ -11,14 +11,18 @@ type Props = {
     name: string;
     email: string;
     phone: string;
-    onView: () => void;
-    onEdit: () => void;
-    onDelete: () => void;
+    onPress: () => void;
 };
 
-export const AlunoCard = ({ name, email, phone, onView, onEdit, onDelete }: Props) => {
+export const AlunoCard = ({ name, email, phone, onPress }: Props) => {
     return (
-        <View style={styles.card}>
+        <Pressable
+            style={({ pressed }) => [
+                styles.card,
+                pressed && styles.cardPressed
+            ]}
+            onPress={onPress}
+        >
             {/* Info Section (Left Side) */}
             <View style={styles.infoSection}>
                 <Text style={styles.nameText} numberOfLines={1} ellipsizeMode="tail">
@@ -42,45 +46,11 @@ export const AlunoCard = ({ name, email, phone, onView, onEdit, onDelete }: Prop
                 </View>
             </View>
 
-            {/* Actions Section (Right Side) */}
-            <View style={styles.actionsSection}>
-                {/* View Button */}
-                <Pressable
-                    style={({ pressed }) => [
-                        styles.actionButton,
-                        styles.viewButton,
-                        pressed && styles.viewButtonPressed
-                    ]}
-                    onPress={onView}
-                >
-                    <Ionicons name="eye-outline" size={18} color="#2563eb" />
-                </Pressable>
-
-                {/* Edit Button */}
-                <Pressable
-                    style={({ pressed }) => [
-                        styles.actionButton,
-                        styles.editButton,
-                        pressed && styles.editButtonPressed
-                    ]}
-                    onPress={onEdit}
-                >
-                    <Ionicons name="pencil-outline" size={16} color="#ea580c" />
-                </Pressable>
-
-                {/* Delete Button */}
-                <Pressable
-                    style={({ pressed }) => [
-                        styles.actionButton,
-                        styles.deleteButton,
-                        pressed && styles.deleteButtonPressed
-                    ]}
-                    onPress={onDelete}
-                >
-                    <Ionicons name="trash-outline" size={16} color="#dc2626" />
-                </Pressable>
+            {/* Chevron Right (Right Side) */}
+            <View style={styles.chevronSection}>
+                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
             </View>
-        </View>
+        </Pressable>
     );
 };
 
@@ -100,6 +70,10 @@ const styles = StyleSheet.create({
         elevation: 2,
         borderWidth: 1,
         borderColor: "rgba(0, 0, 0, 0.03)",
+    },
+    cardPressed: {
+        backgroundColor: "#f9fafb",
+        opacity: 0.9,
     },
     infoSection: {
         flex: 1,
@@ -125,34 +99,10 @@ const styles = StyleSheet.create({
         color: "#6b7280",
         flex: 1,
     },
-    actionsSection: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-    },
-    actionButton: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        alignItems: "center",
+    chevronSection: {
         justifyContent: "center",
-    },
-    viewButton: {
-        backgroundColor: "#eff6ff", // Very light blue
-    },
-    viewButtonPressed: {
-        backgroundColor: "#dbeafe",
-    },
-    editButton: {
-        backgroundColor: "#fff7ed", // Very light orange
-    },
-    editButtonPressed: {
-        backgroundColor: "#ffedd5",
-    },
-    deleteButton: {
-        backgroundColor: "#fef2f2", // Very light red
-    },
-    deleteButtonPressed: {
-        backgroundColor: "#fee2e2",
+        alignItems: "center",
+        paddingLeft: 8,
     },
 });
+

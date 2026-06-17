@@ -84,24 +84,38 @@ Em vez do tradicional `errors` do Laravel, a API customizada retorna as mensagen
 ## 4. Tipos TypeScript e APIs do Frontend
 
 Os tipos TypeScript estão definidos em [aluno.ts](file:///c:/Users/joaol/Documents/React%20Native/sigest-mobile/src/types/aluno.ts):
+* `GetAlunoResponse`: Sucesso (200 OK) ao buscar um aluno específico.
 * `CreateAlunoRequest`: Estrutura do payload de cadastro do aluno.
-* `CreateAlunoSuccessResponse`: Sucesso (201 Created) contendo os dados do aluno cadastrado com ID gerado.
-* `AlunoValidationErrorResponse`: Resposta de validação (422) contendo o dicionário com a chave `mensagem`.
+* `CreateAlunoSuccessResponse`: Sucesso (201 Created) contendo os dados do aluno cadastrado.
+* `UpdateAlunoRequest`: Payload de edição. Contém `name` obrigatório e demais campos opcionais.
+* `UpdateAlunoSuccessResponse`: Sucesso (200 OK) após atualização.
+* `DeleteAlunoResponse`: Sucesso (204 No Content) após deleção (retorna vazio/null).
 
 A integração está centralizada em [aluno.ts (API)](file:///c:/Users/joaol/Documents/React%20Native/sigest-mobile/src/api/aluno.ts):
-```typescript
-export async function createAluno(payload: CreateAlunoRequest) {
-  const { data } = await api.post<CreateAlunoSuccessResponse>("/alunos", payload);
-  return data;
-}
+* **getAlunoById:** `GET /alunos/{id}`
+* **useAlunoQuery:** Busca dados de um único aluno, habilitado apenas quando o ID é válido.
+* **updateAluno:** `PUT /alunos/{id}`
+* **useUpdateAlunoMutation:** Salva alterações de edição do aluno.
+* **deleteAluno:** `DELETE /alunos/{id}`
+* **useDeleteAlunoMutation:** Remove o aluno e invalida a listagem.
 
-export function useCreateAlunoMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: createAluno,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["alunos"] });
-    },
-  });
-}
-```
+---
+
+## 5. Visualização Detalhada, Edição e Exclusão
+
+### A. Detalhe do Aluno (Visualização)
+* **Endpoint:** `GET /api/alunos/{id}`
+* **Tratativas no Front:**
+  * **Relação `turma`:** O objeto retornado possui a chave `turma` que pode vir `null` caso o aluno não esteja enturmado. O frontend deve tratar essa exibição sem falhar.
+  * **Tratamento de 404 (Não Encontrado):** Caso o aluno não exista ou tenha sido removido, exibe-se um alerta amigável e redireciona o usuário para a listagem principal.
+
+### B. Edição do Aluno
+* **Endpoint:** `PUT /api/alunos/{id}`
+* **Regra de Negócio Crítica (Backend):** O validador de edição (`UpdateAlunoRequest`) exige que o campo `name` seja **sempre obrigatório** na edição, mesmo que ele não tenha sido modificado.
+* **Tratativa:** O payload enviado deve sempre incluir o campo `name` atualizado ou o valor anterior intacto.
+
+### C. Exclusão do Aluno
+* **Endpoint:** `DELETE /api/alunos/{id}`
+* **Retorno:** Status `204 No Content` (sem corpo de resposta).
+* **Tratativa:** Ao obter o retorno de sucesso (204), a listagem deve ser invalidada no React Query e o usuário deve ser redirecionado para a tela de listagem.
+

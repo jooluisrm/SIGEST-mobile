@@ -78,24 +78,39 @@ Em vez do tradicional `errors` do Laravel, a API customizada retorna as mensagen
 ## 4. Tipos TypeScript e APIs do Frontend
 
 Os tipos TypeScript estão definidos em [usuario.ts](file:///c:/Users/joaol/Documents/React%20Native/sigest-mobile/src/types/usuario.ts):
+* `GetServidorResponse`: Resposta de sucesso (200 OK) ao buscar um servidor/usuário específico.
 * `CreateServidorRequest`: Estrutura do payload de cadastro do servidor/usuário.
 * `CreateServidorSuccessResponse`: Sucesso (201 Created) unificando dados pessoais e profissionais.
-* `ServidorValidationErrorResponse`: Resposta de validação (422) contendo o dicionário com a chave `mensagem`.
+* `UpdateServidorRequest`: Payload de edição do servidor (campos opcionais). O campo `password` é removido/ignorado.
+* `UpdateServidorSuccessResponse`: Resposta de sucesso (200 OK) após atualização.
+* `DeleteServidorResponse`: Sucesso (204 No Content) ao deletar.
 
 A integração está centralizada em [usuario.ts (API)](file:///c:/Users/joaol/Documents/React%20Native/sigest-mobile/src/api/usuario.ts):
-```typescript
-export async function createServidor(payload: CreateServidorRequest) {
-  const { data } = await api.post<CreateServidorSuccessResponse>("/servidors", payload);
-  return data;
-}
+* **getUsuarioById:** `GET /servidors/{id}`
+* **useUsuarioQuery:** Busca dados de um único servidor.
+* **updateUsuario:** `PUT /servidors/{id}`
+* **useUpdateUsuarioMutation:** Salva edições no servidor.
+* **deleteUsuario:** `DELETE /servidors/{id}`
+* **useDeleteUsuarioMutation:** Remove o servidor e limpa cache.
 
-export function useCreateServidorMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: createServidor,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["usuarios"] });
-    },
-  });
-}
-```
+---
+
+## 5. Visualização Detalhada, Edição e Exclusão
+
+### A. Detalhe do Servidor (Visualização)
+* **Endpoint:** `GET /api/servidors/{id}` (onde `{id}` é o `id_servidor`)
+* **Tratativas no Front:**
+  * **Tratamento de 404 (Não Encontrado):** Se o registro não existir ou tiver sido removido, exibe-se um alerta amigável e o usuário é redirecionado para a lista de usuários.
+  * **Tratamento de Nulos:** Campos nulos (`complemento`, `genero`) devem ser limpos ou tratados para não disparar exceções no React Native.
+
+### B. Edição do Servidor
+* **Endpoint:** `PUT /api/servidors/{id}` (onde `{id}` é o `id_servidor`)
+* **Atenção (Backend):** O campo `password` é expressamente ignorado pelo backend no update (assim como no Professor). A rota não atualiza a senha.
+* **Tratativa:** O formulário de edição do frontend não deve processar ou exigir o campo de senha.
+
+### C. Exclusão do Servidor
+* **Endpoint:** `DELETE /api/servidors/{id}` (onde `{id}` é o `id_servidor`)
+* **Funcionamento:** Exclui o `user_id` associado, revoga tokens ativos e remove por cascata o registro da tabela `servidors`.
+* **Retorno:** Status `204 No Content` (sem corpo).
+* **Tratativa:** Ao receber sucesso 204, invalidar queries locais no React Query e redirecionar para a listagem.
+

@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { Alert } from "react-native";
-import { useRouter } from "expo-router";
+import React, { useState, useEffect } from "react";
+import { Alert, View, ActivityIndicator, StyleSheet, Text } from "react-native";
+import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
 import { CadastroFormPerson } from "@/components/gerenciar/cadastro-form-person";
-import { useCreateServidorMutation } from "@/api/usuario";
-import { CreateServidorRequest } from "@/types/usuario";
+import { useCreateServidorMutation, useUsuarioQuery, useUpdateUsuarioMutation } from "@/api/usuario";
+import { CreateServidorRequest, UpdateServidorRequest } from "@/types/usuario";
 import axios from "axios";
 
 function parseDateBRToISO(dateStr: string): string {
@@ -17,10 +17,56 @@ function parseDateBRToISO(dateStr: string): string {
     return dateStr;
 }
 
+function formatDateISOToBR(dateStr: string): string {
+    const parts = dateStr.split("-");
+    if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return dateStr;
+}
+
+function mapServidorToForm(servidor: any): any {
+    return {
+        nomeCompleto: servidor.name || "",
+        nomePai: servidor.nome_pai || "",
+        nomeMae: servidor.nome_mae || "",
+        cpf: servidor.cpf || "",
+        rg: servidor.rg || "",
+        genero: servidor.genero || "",
+        dataNascimento: servidor.data_nascimento ? formatDateISOToBR(servidor.data_nascimento) : "",
+        telefone: servidor.telefone || "",
+        celular: servidor.celular || "",
+        email: servidor.email || "",
+        deficiencia: servidor.deficiencia && servidor.deficiencia !== "Nenhuma" ? "Sim" : "Não",
+        qualDeficiencia: servidor.deficiencia && servidor.deficiencia !== "Nenhuma" ? servidor.deficiencia : "",
+        logradouro: servidor.logradouro || "",
+        numero: servidor.numero || "",
+        bairro: servidor.bairro || "",
+        complemento: servidor.complemento || "",
+        estado: servidor.estado || "",
+        cidade: servidor.cidade || "",
+        cargo: servidor.cargo || "",
+        setor: servidor.setor || "",
+    };
+}
+
 export default function CadastroUsuario() {
     const router = useRouter();
-    const { mutateAsync, isPending } = useCreateServidorMutation();
+    const navigation = useNavigation();
+    const { id } = useLocalSearchParams<{ id?: string }>();
+
+    // Mutations & Queries
+    const { mutateAsync: createServidor, isPending: isCreating } = useCreateServidorMutation();
+    const { mutateAsync: updateServidor, isPending: isUpdating } = useUpdateUsuarioMutation();
+    const { data: queryData, isLoading: isLoadingQuery } = useUsuarioQuery(id || "");
+
     const [errorMessages, setErrorMessages] = useState<Record<string, string[]>>({});
+
+    useEffect(() => {
+        navigation.setOptions({
+            title: id ? "Editar Usuário" : "Cadastrar Usuário"
+        });
+    }, [id, navigation]);
 
     const handleClearError = (field: string) => {
         setErrorMessages(prev => {
@@ -40,7 +86,7 @@ export default function CadastroUsuario() {
         const cleanCelular = dados.celular.replace(/\D/g, "");
         
         // Build the payload
-        const payload: CreateServidorRequest = {
+        const payload: any = {
             name: dados.nomeCompleto,
             cpf: cleanCpf,
             rg: cleanRg,
@@ -58,17 +104,26 @@ export default function CadastroUsuario() {
             telefone: cleanTelefone,
             celular: cleanCelular,
             email: dados.email,
-            password: dados.senha,
             cargo: dados.cargo,
             setor: dados.setor,
         };
 
+        // password field is ignored by the backend in update, so we only send it on create
+        if (!id) {
+            payload.password = dados.senha;
+        }
+
         try {
-            await mutateAsync(payload);
-            Alert.alert("Sucesso", "Usuário cadastrado com sucesso!");
+            if (id) {
+                await updateServidor({ id, payload: payload as UpdateServidorRequest });
+                Alert.alert("Sucesso", "Usuário atualizado com sucesso!");
+            } else {
+                await createServidor(payload as CreateServidorRequest);
+                Alert.alert("Sucesso", "Usuário cadastrado com sucesso!");
+            }
             router.back();
         } catch (error: any) {
-            console.error("Erro ao cadastrar usuário:", error);
+            console.error("Erro ao salvar usuário:", error);
             if (axios.isAxiosError(error) && error.response) {
                 const responseData = error.response.data;
                 if (error.response.status === 422 && responseData?.mensagem) {
@@ -78,7 +133,7 @@ export default function CadastroUsuario() {
                         "Alguns campos possuem erros. Verifique as mensagens marcadas em vermelho no formulário."
                     );
                 } else {
-                    const msg = responseData?.message || "Ocorreu um erro ao cadastrar o usuário.";
+                    const msg = responseData?.message || "Ocorreu um erro ao salvar o usuário.";
                     Alert.alert("Erro", msg);
                 }
             } else {
@@ -87,14 +142,41 @@ export default function CadastroUsuario() {
         }
     };
 
+    if (id && isLoadingQuery) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#52B28B" />
+                <Text style={styles.loadingText}>Buscando dados do usuário...</Text>
+            </View>
+        );
+    }
+
+    const initialData = queryData?.data ? mapServidorToForm(queryData.data) : undefined;
+
     return (
         <CadastroFormPerson 
             tipo="usuario" 
             onSubmit={handleSubmit}
             onCancel={() => router.back()}
-            isLoading={isPending}
+            isLoading={isCreating || isUpdating}
             errorMessages={errorMessages}
             onClearError={handleClearError}
+            initialData={initialData}
         />
     );
 }
+
+const styles = StyleSheet.create({
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#f9fafb",
+    },
+    loadingText: {
+        marginTop: 12,
+        fontSize: 15,
+        color: "#6b7280",
+        fontWeight: "500",
+    },
+});

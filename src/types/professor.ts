@@ -167,3 +167,21 @@ export interface GenericErrorResponse {
   data: null;
 }
 
+export interface GetProfessorResponse {
+  status: boolean;
+  code: number; // 200
+  message: string;
+  data: ProfessorData;
+}
+
+export interface UpdateProfessorRequest extends Partial<Omit<CreateProfessorRequest, 'password'>> {}
+
+export interface UpdateProfessorSuccessResponse {
+  status: boolean;
+  code: number; // 200
+  message: string;
+  data: ProfessorData;
+}
+
+export type DeleteProfessorResponse = null;
+

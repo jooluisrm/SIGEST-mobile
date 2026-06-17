@@ -10,21 +10,34 @@ import {
 import { useRouter } from "expo-router";
 import { SearchAddHeader } from "@/components/gerenciar/search-add-header";
 import { AlunoCard } from "@/components/gerenciar/aluno/aluno-card";
-import { PaginationControl } from "@/components/gerenciar/pagination-control";
 import { Ionicons } from "@expo/vector-icons";
-import { useAlunosQuery } from "../../../../src/api/aluno";
+import { useAlunosInfiniteQuery } from "../../../../src/api/aluno";
 
 export default function Aluno() {
     const router = useRouter();
     const [searchText, setSearchText] = useState("");
-    const [currentPage, setCurrentPage] = useState(1);
+    const [debouncedSearchText, setDebouncedSearchText] = useState("");
 
-    // Consulta real usando o TanStack Query
-    const { data, isLoading, error } = useAlunosQuery(searchText, currentPage);
+    // Debounce de 500ms na busca para evitar requisições a cada letra digitada
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearchText(searchText);
+        }, 500);
+        return () => clearTimeout(handler);
+    }, [searchText]);
 
-    // Mapeamento dos resultados recebidos da API (data pode ser null na resposta de sucesso geral vazia)
-    const alumnos = data?.data || [];
-    const totalPages = (data && "meta" in data) ? data.meta.last_page : 1;
+    // Consulta usando rolagem infinita (useInfiniteQuery)
+    const { 
+        data, 
+        isLoading, 
+        error, 
+        fetchNextPage, 
+        hasNextPage, 
+        isFetchingNextPage 
+    } = useAlunosInfiniteQuery(debouncedSearchText);
+
+    // Mapeia todas as páginas de resultados vindas do backend em um array plano
+    const alumnos = data?.pages.flatMap((page) => page.data || []) || [];
 
     useEffect(() => {
         if (error) {
@@ -38,52 +51,21 @@ export default function Aluno() {
 
     const handleSearchChange = (text: string) => {
         setSearchText(text);
-        setCurrentPage(1); // Reinicia para a página 1 ao realizar busca
-    };
-
-    const handlePageChange = (page: number) => {
-        if (page >= 1 && page <= totalPages) {
-            setCurrentPage(page);
-        }
     };
 
     const handleAddPress = () => {
         router.push("/gerenciar/aluno/cadastro");
     };
 
-    const handleViewPress = (name: string) => {
-        Alert.alert("Visualizar", `Visualizando detalhes do aluno: ${name}`);
+    const handleCardPress = (id: number) => {
+        router.push(`/gerenciar/aluno/${id}` as any);
     };
 
-    const handleEditPress = (name: string) => {
-        Alert.alert("Editar", `Abrir formulário de edição para: ${name}`);
+    const handleLoadMore = () => {
+        if (hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+        }
     };
-
-    const handleDeletePress = (id: string, name: string) => {
-        Alert.alert(
-            "Excluir",
-            `Deseja realmente excluir o aluno ${name}?`,
-            [
-                { text: "Cancelar", style: "cancel" },
-                {
-                    text: "Excluir",
-                    style: "destructive",
-                    onPress: () => {
-                        console.log(`Excluir aluno ID: ${id}`);
-                    }
-                }
-            ]
-        );
-    };
-
-    if (isLoading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#52B28B" />
-                <Text style={styles.loadingText}>Carregando alunos...</Text>
-            </View>
-        );
-    }
 
     return (
         <View style={styles.container}>
@@ -102,7 +84,13 @@ export default function Aluno() {
                 </Text>
             )}
 
-            {/* Lista de alunos vindos da API */}
+            {isLoading ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#52B28B" />
+                    <Text style={styles.loadingText}>Carregando alunos...</Text>
+                </View>
+            ) : (
+                /* Lista de alunos vindos da API com Rolagem Infinita */
             <FlatList
                 data={alumnos}
                 keyExtractor={(item) => String(item.id)}
@@ -111,13 +99,20 @@ export default function Aluno() {
                         name={item.name}
                         email={item.email}
                         phone={item.celular || item.telefone || "Não cadastrado"}
-                        onView={() => handleViewPress(item.name)}
-                        onEdit={() => handleEditPress(item.name)}
-                        onDelete={() => handleDeletePress(String(item.id), item.name)}
+                        onPress={() => handleCardPress(item.id)}
                     />
                 )}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
+                onEndReached={handleLoadMore}
+                onEndReachedThreshold={0.2}
+                ListFooterComponent={
+                    isFetchingNextPage ? (
+                        <View style={styles.footerLoading}>
+                            <ActivityIndicator size="small" color="#52B28B" />
+                        </View>
+                    ) : null
+                }
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Ionicons name="search-outline" size={48} color="#9ca3af" />
@@ -125,13 +120,7 @@ export default function Aluno() {
                     </View>
                 }
             />
-
-            {/* Controle de Paginação do Laravel */}
-            <PaginationControl
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-            />
+            )}
         </View>
     );
 }
@@ -177,5 +166,10 @@ const styles = StyleSheet.create({
         fontStyle: "italic",
         marginBottom: 8,
         marginLeft: 4,
+    },
+    footerLoading: {
+        paddingVertical: 16,
+        alignItems: "center",
+        justifyContent: "center",
     },
 });

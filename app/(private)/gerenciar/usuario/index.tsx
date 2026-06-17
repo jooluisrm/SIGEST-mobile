@@ -10,21 +10,34 @@ import {
 import { useRouter } from "expo-router";
 import { SearchAddHeader } from "@/components/gerenciar/search-add-header";
 import { UsuarioCard } from "@/components/gerenciar/usuario/usuario-card";
-import { PaginationControl } from "@/components/gerenciar/pagination-control";
 import { Ionicons } from "@expo/vector-icons";
-import { useUsuariosQuery } from "../../../../src/api/usuario";
+import { useUsuariosInfiniteQuery } from "../../../../src/api/usuario";
 
 export default function Usuario() {
     const router = useRouter();
     const [searchText, setSearchText] = useState("");
-    const [currentPage, setCurrentPage] = useState(1);
+    const [debouncedSearchText, setDebouncedSearchText] = useState("");
 
-    // Consulta real usando o TanStack Query
-    const { data, isLoading, error } = useUsuariosQuery(searchText, currentPage);
+    // Debounce de 500ms na busca para evitar requisições a cada letra digitada
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearchText(searchText);
+        }, 500);
+        return () => clearTimeout(handler);
+    }, [searchText]);
 
-    // Mapeamento dos resultados recebidos da API (data pode ser null se o resultado for vazio)
-    const usuarios = data?.data || [];
-    const totalPages = (data && "meta" in data) ? data.meta.last_page : 1;
+    // Consulta real usando o TanStack Query com rolagem infinita
+    const { 
+        data, 
+        isLoading, 
+        error, 
+        fetchNextPage, 
+        hasNextPage, 
+        isFetchingNextPage 
+    } = useUsuariosInfiniteQuery(debouncedSearchText);
+
+    // Mapeamento dos resultados recebidos da API (data contém páginas no useInfiniteQuery)
+    const usuarios = data?.pages.flatMap((page) => page.data || []) || [];
 
     useEffect(() => {
         if (error) {
@@ -38,52 +51,21 @@ export default function Usuario() {
 
     const handleSearchChange = (text: string) => {
         setSearchText(text);
-        setCurrentPage(1); // Reinicia para a página 1 ao realizar busca
-    };
-
-    const handlePageChange = (page: number) => {
-        if (page >= 1 && page <= totalPages) {
-            setCurrentPage(page);
-        }
     };
 
     const handleAddPress = () => {
         router.push("/gerenciar/usuario/cadastro");
     };
 
-    const handleViewPress = (name: string) => {
-        Alert.alert("Visualizar", `Visualizando detalhes do usuário: ${name}`);
+    const handleCardPress = (id: number) => {
+        router.push(`/gerenciar/usuario/${id}` as any);
     };
 
-    const handleEditPress = (name: string) => {
-        Alert.alert("Editar", `Abrir formulário de edição para: ${name}`);
+    const handleLoadMore = () => {
+        if (hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+        }
     };
-
-    const handleDeletePress = (id: string, name: string) => {
-        Alert.alert(
-            "Excluir",
-            `Deseja realmente excluir o usuário ${name}?`,
-            [
-                { text: "Cancelar", style: "cancel" },
-                { 
-                    text: "Excluir", 
-                    style: "destructive", 
-                    onPress: () => {
-                        console.log(`Excluir usuário ID: ${id}`);
-                    } 
-                }
-            ]
-        );
-    };
-
-    if (isLoading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#52B28B" />
-                <Text style={styles.loadingText}>Carregando servidores...</Text>
-            </View>
-        );
-    }
 
     return (
         <View style={styles.container}>
@@ -102,36 +84,43 @@ export default function Usuario() {
                 </Text>
             )}
 
-            {/* Lista de usuários vindos da API */}
-            <FlatList
-                data={usuarios}
-                keyExtractor={(item) => String(item.id_servidor)}
-                renderItem={({ item }) => (
-                    <UsuarioCard
-                        name={item.name}
-                        email={item.email}
-                        phone={item.celular || item.telefone || "Não cadastrado"}
-                        onView={() => handleViewPress(item.name)}
-                        onEdit={() => handleEditPress(item.name)}
-                        onDelete={() => handleDeletePress(String(item.id_servidor), item.name)}
-                    />
-                )}
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={false}
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Ionicons name="search-outline" size={48} color="#9ca3af" />
-                        <Text style={styles.emptyText}>Nenhum usuário encontrado</Text>
-                    </View>
-                }
-            />
-
-            {/* Controle de Paginação do Laravel */}
-            <PaginationControl
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-            />
+            {isLoading ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#52B28B" />
+                    <Text style={styles.loadingText}>Carregando servidores...</Text>
+                </View>
+            ) : (
+                /* Lista de usuários vindos da API com Rolagem Infinita */
+                <FlatList
+                    data={usuarios}
+                    keyExtractor={(item) => String(item.id_servidor)}
+                    renderItem={({ item }) => (
+                        <UsuarioCard
+                            name={item.name}
+                            email={item.email}
+                            phone={item.celular || item.telefone || "Não cadastrado"}
+                            onPress={() => handleCardPress(item.id_servidor)}
+                        />
+                    )}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.2}
+                    ListFooterComponent={
+                        isFetchingNextPage ? (
+                            <View style={styles.footerLoading}>
+                                <ActivityIndicator size="small" color="#52B28B" />
+                            </View>
+                        ) : null
+                    }
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <Ionicons name="search-outline" size={48} color="#9ca3af" />
+                            <Text style={styles.emptyText}>Nenhum usuário encontrado</Text>
+                        </View>
+                    }
+                />
+            )}
         </View>
     );
 }
@@ -177,5 +166,10 @@ const styles = StyleSheet.create({
         fontStyle: "italic",
         marginBottom: 8,
         marginLeft: 4,
+    },
+    footerLoading: {
+        paddingVertical: 16,
+        alignItems: "center",
+        justifyContent: "center",
     },
 });

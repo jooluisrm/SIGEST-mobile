@@ -172,3 +172,23 @@ export interface AlunoGenericErrorResponse {
   data: null;
 }
 
+export interface GetAlunoResponse {
+  status: boolean;
+  code: number; // 200
+  message: string;
+  data: AlunoData;
+}
+
+export interface UpdateAlunoRequest extends Partial<Omit<CreateAlunoRequest, 'name'>> {
+  name: string; // Sempre obrigatório na edição!
+}
+
+export interface UpdateAlunoSuccessResponse {
+  status: boolean;
+  code: number; // 200
+  message: string;
+  data: AlunoData;
+}
+
+export type DeleteAlunoResponse = null;
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { 
     StyleSheet, 
     Text, 
@@ -9,7 +9,9 @@ import {
     Modal, 
     KeyboardTypeOptions, 
     Alert,
-    ActivityIndicator
+    ActivityIndicator,
+    Platform,
+    KeyboardAvoidingView
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
@@ -22,6 +24,7 @@ type Props = {
     isLoading?: boolean;
     errorMessages?: Record<string, string[]>;
     onClearError?: (field: string) => void;
+    initialData?: Record<string, string>;
 };
 
 type FormField = {
@@ -63,14 +66,17 @@ export const CadastroFormPerson = ({
     onCancel, 
     isLoading = false, 
     errorMessages, 
-    onClearError 
+    onClearError,
+    initialData
 }: Props) => {
     const [step, setStep] = useState(1);
+    const hasInitialized = useRef(false);
     
     // Dropdown picker state
     const [pickerVisible, setPickerVisible] = useState(false);
     const [activePickerField, setActivePickerField] = useState<string | null>(null);
     const [activePickerOptions, setActivePickerOptions] = useState<string[]>([]);
+    const [focusedField, setFocusedField] = useState<string | null>(null);
     
     // Form state
     const [formData, setFormData] = useState<Record<string, string>>({
@@ -155,6 +161,19 @@ export const CadastroFormPerson = ({
     useEffect(() => {
         fetchStates();
     }, []);
+
+    useEffect(() => {
+        if (initialData && !hasInitialized.current) {
+            setFormData(prev => ({
+                ...prev,
+                ...initialData
+            }));
+            if (initialData.estado) {
+                fetchCities(initialData.estado);
+            }
+            hasInitialized.current = true;
+        }
+    }, [initialData]);
 
     const getPickerOptions = (): string[] => {
         if (activePickerField === "estado") {
@@ -280,9 +299,17 @@ export const CadastroFormPerson = ({
                 if (!formData.setor.trim()) return "Setor é obrigatório.";
             }
             // Security validation
-            if (!formData.senha) return "Senha é obrigatória.";
-            if (formData.senha.length < 6) return "A senha deve ter no mínimo 6 caracteres.";
-            if (formData.senha !== formData.confirmarSenha) return "As senhas não coincidem.";
+            const isEdit = !!initialData;
+            if (!isEdit) {
+                if (!formData.senha) return "Senha é obrigatória.";
+                if (formData.senha.length < 6) return "A senha deve ter no mínimo 6 caracteres.";
+                if (formData.senha !== formData.confirmarSenha) return "As senhas não coincidem.";
+            } else {
+                if (formData.senha) {
+                    if (formData.senha.length < 6) return "A senha deve ter no mínimo 6 caracteres.";
+                    if (formData.senha !== formData.confirmarSenha) return "As senhas não coincidem.";
+                }
+            }
         }
         return null;
     };
@@ -314,6 +341,8 @@ export const CadastroFormPerson = ({
         const value = formData[item.key] || "";
         const fieldErrors = getFieldError(item.key);
         const hasError = !!fieldErrors;
+        const isFocused = focusedField === item.key;
+        const isPickerActive = activePickerField === item.key;
         
         if (item.options) {
             // Selection dropdown field representation
@@ -321,7 +350,11 @@ export const CadastroFormPerson = ({
                 <View key={item.key} style={styles.inputWrapper}>
                     <Text style={styles.label}>{item.label}</Text>
                     <Pressable
-                        style={[styles.selectInput, hasError && styles.selectInputError]}
+                        style={[
+                            styles.selectInput, 
+                            hasError && styles.selectInputError,
+                            isPickerActive && styles.selectInputFocused
+                        ]}
                         onPress={() => openPicker(item.key, item.options!)}
                         disabled={isLoading}
                     >
@@ -341,7 +374,11 @@ export const CadastroFormPerson = ({
             <View key={item.key} style={styles.inputWrapper}>
                 <Text style={styles.label}>{item.label}</Text>
                 <TextInput
-                    style={[styles.textInput, hasError && styles.textInputError]}
+                    style={[
+                        styles.textInput, 
+                        hasError && styles.textInputError,
+                        isFocused && styles.textInputFocused
+                    ]}
                     value={value}
                     onChangeText={(text) => handleInputChange(item.key, text)}
                     placeholder={item.placeholder}
@@ -351,6 +388,8 @@ export const CadastroFormPerson = ({
                     autoCapitalize={item.secureTextEntry ? "none" : "sentences"}
                     autoCorrect={false}
                     editable={!isLoading}
+                    onFocus={() => setFocusedField(item.key)}
+                    onBlur={() => setFocusedField(null)}
                 />
                 {hasError && (
                     <Text style={styles.errorText}>{fieldErrors[0]}</Text>
@@ -438,7 +477,11 @@ export const CadastroFormPerson = ({
     };
 
     return (
-        <View style={styles.container}>
+        <KeyboardAvoidingView 
+            style={styles.container}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        >
             {/* Stepper visual indicator */}
             <View style={styles.stepperContainer}>
                 <View style={styles.stepperRow}>
@@ -532,7 +575,9 @@ export const CadastroFormPerson = ({
                         {isLoading ? (
                             <ActivityIndicator size="small" color="#ffffff" />
                         ) : (
-                            <Text style={styles.submitButtonText}>Cadastrar</Text>
+                            <Text style={styles.submitButtonText}>
+                                {initialData ? "Salvar" : "Cadastrar"}
+                            </Text>
                         )}
                     </Pressable>
                 )}
@@ -543,7 +588,10 @@ export const CadastroFormPerson = ({
                 visible={pickerVisible}
                 transparent
                 animationType="fade"
-                onRequestClose={() => setPickerVisible(false)}
+                onRequestClose={() => {
+                    setPickerVisible(false);
+                    setActivePickerField(null);
+                }}
             >
                 <View style={styles.pickerBackdrop}>
                     <View style={styles.pickerModal}>
@@ -598,14 +646,17 @@ export const CadastroFormPerson = ({
                         )}
                         <Pressable 
                             style={styles.pickerCloseButton} 
-                            onPress={() => setPickerVisible(false)}
+                            onPress={() => {
+                                setPickerVisible(false);
+                                setActivePickerField(null);
+                            }}
                         >
                             <Text style={styles.pickerCloseButtonText}>Fechar</Text>
                         </Pressable>
                     </View>
                 </View>
             </Modal>
-        </View>
+        </KeyboardAvoidingView>
     );
 };
 
@@ -849,6 +900,12 @@ const styles = StyleSheet.create({
     },
     textInputError: {
         borderColor: "#dc2626",
+    },
+    selectInputFocused: {
+        borderColor: "#1D8C43",
+    },
+    textInputFocused: {
+        borderColor: "#1D8C43",
     },
     errorText: {
         fontSize: 12,

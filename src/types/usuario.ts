@@ -167,3 +167,21 @@ export interface ServidorGenericErrorResponse {
   data: null;
 }
 
+export interface GetServidorResponse {
+  status: boolean;
+  code: number; // 200
+  message: string;
+  data: ServidorData;
+}
+
+export interface UpdateServidorRequest extends Partial<Omit<CreateServidorRequest, 'password'>> {}
+
+export interface UpdateServidorSuccessResponse {
+  status: boolean;
+  code: number; // 200
+  message: string;
+  data: ServidorData;
+}
+
+export type DeleteServidorResponse = null;
+
