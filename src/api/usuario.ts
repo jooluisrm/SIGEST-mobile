@@ -1,6 +1,11 @@
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { api } from "../lib/axios";
-import { UsuariosPaginatedResponse, UsuariosEmptyResponse } from "../types/usuario";
+import { 
+  UsuariosPaginatedResponse, 
+  UsuariosEmptyResponse,
+  CreateServidorRequest,
+  CreateServidorSuccessResponse
+} from "../types/usuario";
 
 export type UsuariosApiResponse = UsuariosPaginatedResponse | UsuariosEmptyResponse;
 
@@ -45,5 +50,27 @@ export function useUsuariosQuery(searchTerm: string, page: number) {
     },
     placeholderData: keepPreviousData,
     staleTime: 1000 * 10, // Cache local por 10 segundos
+  });
+}
+
+/**
+ * Cria um novo servidor (usuário) no backend.
+ */
+export async function createServidor(payload: CreateServidorRequest) {
+  const { data } = await api.post<CreateServidorSuccessResponse>("/servidors", payload);
+  return data;
+}
+
+/**
+ * Hook para mutação de criação de servidor que invalida a listagem.
+ */
+export function useCreateServidorMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createServidor,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["usuarios"] });
+    },
   });
 }

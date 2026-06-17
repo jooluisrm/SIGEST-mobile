@@ -1,6 +1,11 @@
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { api } from "../lib/axios";
-import { ProfessorsPaginatedResponse, ProfessorsEmptyResponse } from "../types/professor";
+import { 
+  ProfessorsPaginatedResponse, 
+  ProfessorsEmptyResponse,
+  CreateProfessorRequest,
+  CreateProfessorSuccessResponse
+} from "../types/professor";
 
 export type ProfessorApiResponse = ProfessorsPaginatedResponse | ProfessorsEmptyResponse;
 
@@ -45,5 +50,27 @@ export function useProfessorsQuery(searchTerm: string, page: number) {
     },
     placeholderData: keepPreviousData,
     staleTime: 1000 * 10, // Cache local por 10 segundos
+  });
+}
+
+/**
+ * Cria um novo professor no backend.
+ */
+export async function createProfessor(payload: CreateProfessorRequest) {
+  const { data } = await api.post<CreateProfessorSuccessResponse>("/professors", payload);
+  return data;
+}
+
+/**
+ * Hook para mutação de criação de professor que invalida a listagem.
+ */
+export function useCreateProfessorMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createProfessor,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["professors"] });
+    },
   });
 }

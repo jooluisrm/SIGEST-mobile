@@ -1,6 +1,11 @@
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { api } from "../lib/axios";
-import { AlunosPaginatedResponse, AlunosEmptyGeneralResponse } from "../types/aluno";
+import { 
+  AlunosPaginatedResponse, 
+  AlunosEmptyGeneralResponse,
+  CreateAlunoRequest,
+  CreateAlunoSuccessResponse
+} from "../types/aluno";
 
 export type AlunosApiResponse = AlunosPaginatedResponse | AlunosEmptyGeneralResponse;
 
@@ -45,5 +50,27 @@ export function useAlunosQuery(searchTerm: string, page: number) {
     },
     placeholderData: keepPreviousData,
     staleTime: 1000 * 10, // Cache local por 10 segundos
+  });
+}
+
+/**
+ * Cria um novo aluno no backend.
+ */
+export async function createAluno(payload: CreateAlunoRequest) {
+  const { data } = await api.post<CreateAlunoSuccessResponse>("/alunos", payload);
+  return data;
+}
+
+/**
+ * Hook para mutação de criação de aluno que invalida a listagem.
+ */
+export function useCreateAlunoMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createAluno,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["alunos"] });
+    },
   });
 }

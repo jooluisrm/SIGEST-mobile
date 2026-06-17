@@ -92,3 +92,78 @@ export interface ValidationResponseError {
     [key: string]: string[] | undefined;
   };
 }
+
+// Payload enviado ao cadastrar o servidor (usuário)
+export interface CreateServidorRequest {
+  name: string;
+  cpf: string;
+  rg: string;
+  data_nascimento: string; // Formato YYYY-MM-DD
+  nome_pai: string; // Exigido no BD!
+  nome_mae: string;
+  genero?: string | null; // Opcional
+  deficiencia: string;
+  logradouro: string;
+  numero: string;
+  bairro: string;
+  complemento?: string | null; // Opcional
+  cidade: string;
+  estado: string; // Ex: "SP"
+  telefone: string; // Exigido no BD!
+  celular: string;
+  email: string;
+  password?: string; // Obrigatório no cadastro
+  cargo: string; // Campo específico de Servidor
+  setor: string; // Campo específico de Servidor
+}
+
+// Dados do servidor retornados no 'data'
+export interface ServidorData {
+  id_user: number;
+  id_servidor: number;
+  name: string;
+  cpf: string;
+  rg: string;
+  data_nascimento: string;
+  nome_pai: string;
+  nome_mae: string;
+  genero: string | null;
+  deficiencia: string;
+  logradouro: string;
+  numero: string;
+  bairro: string;
+  complemento: string | null;
+  cidade: string;
+  estado: string;
+  telefone: string;
+  celular: string;
+  email: string;
+  cargo: string;
+  setor: string;
+}
+
+// Resposta de sucesso (201 Created)
+export interface CreateServidorSuccessResponse {
+  status: boolean; // true
+  code: number; // 201
+  message: string;
+  data: ServidorData;
+}
+
+// Resposta de erro de validação (422 Unprocessable Content)
+export interface ServidorValidationErrorResponse {
+  status: boolean; // false
+  code: number; // 422
+  mensagem: {
+    [key in keyof CreateServidorRequest]?: string[];
+  };
+}
+
+// Resposta de erro genérico do servidor
+export interface ServidorGenericErrorResponse {
+  status: boolean; // false
+  code: number;
+  message: string;
+  data: null;
+}
+

@@ -92,3 +92,78 @@ export interface ValidationResponseError {
     [key: string]: string[] | undefined;
   };
 }
+
+// Payload enviado ao cadastrar o professor
+export interface CreateProfessorRequest {
+  name: string;
+  cpf: string;
+  rg: string;
+  data_nascimento: string; // Formato YYYY-MM-DD
+  nome_pai: string; // Obrigatório no banco de dados!
+  nome_mae: string;
+  genero?: string | null; // Opcional no banco
+  deficiencia: string;
+  logradouro: string;
+  numero: string;
+  bairro: string;
+  complemento?: string | null; // Opcional no banco
+  cidade: string;
+  estado: string; // Ex: "SP"
+  telefone: string; // Obrigatório no banco de dados!
+  celular: string;
+  email: string;
+  password?: string; // Obrigatório na criação
+  matricula_adpm: string;
+  codigo_disciplina: string;
+}
+
+// Dados do professor retornados na propriedade 'data'
+export interface ProfessorData {
+  id_user: number;
+  id_professor: number;
+  name: string;
+  cpf: string;
+  rg: string;
+  data_nascimento: string;
+  nome_pai: string;
+  nome_mae: string;
+  genero: string | null;
+  deficiencia: string;
+  logradouro: string;
+  numero: string;
+  bairro: string;
+  complemento: string | null;
+  cidade: string;
+  estado: string;
+  telefone: string;
+  celular: string;
+  email: string;
+  matricula_adpm: string;
+  codigo_disciplina: string;
+}
+
+// Resposta de sucesso (201 Created)
+export interface CreateProfessorSuccessResponse {
+  status: boolean; // true
+  code: number; // 201
+  message: string;
+  data: ProfessorData;
+}
+
+// Resposta de erro de validação (422 Unprocessable Content)
+export interface ValidationErrorResponse {
+  status: boolean; // false
+  code: number; // 422
+  mensagem: {
+    [key in keyof CreateProfessorRequest]?: string[];
+  };
+}
+
+// Resposta de erro genérico do servidor (500) ou outras falhas
+export interface GenericErrorResponse {
+  status: boolean; // false
+  code: number;
+  message: string;
+  data: null;
+}
+

@@ -13,11 +13,15 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
+import { formatCPF, formatDateBR, formatPhoneBR, formatRG } from "@/utils/masks";
 
 type Props = {
     tipo: "aluno" | "professor" | "usuario";
     onSubmit: (dados: any) => void;
     onCancel: () => void;
+    isLoading?: boolean;
+    errorMessages?: Record<string, string[]>;
+    onClearError?: (field: string) => void;
 };
 
 type FormField = {
@@ -29,7 +33,38 @@ type FormField = {
     options?: string[]; // If options are present, render as select picker
 };
 
-export const CadastroFormPerson = ({ tipo, onSubmit, onCancel }: Props) => {
+function validarCPF(cpf: string): boolean {
+    const cleanCPF = cpf.replace(/\D/g, "");
+    if (cleanCPF.length !== 11) return false;
+    if (/^(\d)\1{10}$/.test(cleanCPF)) return false;
+
+    let sum = 0;
+    for (let i = 0; i < 9; i++) {
+        sum += parseInt(cleanCPF.charAt(i)) * (10 - i);
+    }
+    let rev = 11 - (sum % 11);
+    if (rev === 10 || rev === 11) rev = 0;
+    if (rev !== parseInt(cleanCPF.charAt(9))) return false;
+
+    sum = 0;
+    for (let i = 0; i < 10; i++) {
+        sum += parseInt(cleanCPF.charAt(i)) * (11 - i);
+    }
+    rev = 11 - (sum % 11);
+    if (rev === 10 || rev === 11) rev = 0;
+    if (rev !== parseInt(cleanCPF.charAt(10))) return false;
+
+    return true;
+}
+
+export const CadastroFormPerson = ({ 
+    tipo, 
+    onSubmit, 
+    onCancel, 
+    isLoading = false, 
+    errorMessages, 
+    onClearError 
+}: Props) => {
     const [step, setStep] = useState(1);
     
     // Dropdown picker state
@@ -131,9 +166,35 @@ export const CadastroFormPerson = ({ tipo, onSubmit, onCancel }: Props) => {
         return activePickerOptions;
     };
 
+    const getFieldError = (key: string): string[] | undefined => {
+        if (!errorMessages) return undefined;
+        if (errorMessages[key]) return errorMessages[key];
+        
+        // Map camelCase to snake_case
+        const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        if (errorMessages[snakeKey]) return errorMessages[snakeKey];
+        
+        // Special cases
+        if (key === "nomeCompleto" && errorMessages["name"]) return errorMessages["name"];
+        if (key === "senha" && errorMessages["password"]) return errorMessages["password"];
+        
+        return undefined;
+    };
+
     const handleInputChange = (field: string, value: string) => {
+        let formattedValue = value;
+        if (field === "cpf") {
+            formattedValue = formatCPF(value);
+        } else if (field === "dataNascimento") {
+            formattedValue = formatDateBR(value);
+        } else if (field === "telefone" || field === "celular") {
+            formattedValue = formatPhoneBR(value);
+        } else if (field === "rg") {
+            formattedValue = formatRG(value);
+        }
+
         setFormData(prev => {
-            const updated = { ...prev, [field]: value };
+            const updated = { ...prev, [field]: formattedValue };
             if (field === "deficiencia" && value === "Não") {
                 updated.qualDeficiencia = "";
             }
@@ -143,7 +204,16 @@ export const CadastroFormPerson = ({ tipo, onSubmit, onCancel }: Props) => {
             return updated;
         });
         if (field === "estado") {
-            fetchCities(value);
+            fetchCities(formattedValue);
+        }
+        if (onClearError) {
+            onClearError(field);
+            if (field === "nomeCompleto") onClearError("name");
+            if (field === "senha") onClearError("password");
+            const snakeKey = field.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+            if (snakeKey !== field) {
+                onClearError(snakeKey);
+            }
         }
     };
 
@@ -167,8 +237,25 @@ export const CadastroFormPerson = ({ tipo, onSubmit, onCancel }: Props) => {
     const validateStep = () => {
         if (step === 1) {
             if (!formData.nomeCompleto.trim()) return "Nome Completo é obrigatório.";
-            if (!formData.cpf.trim()) return "CPF é obrigatório.";
+            if (!formData.nomePai.trim()) return "Nome do Pai é obrigatório.";
+            if (!formData.nomeMae.trim()) return "Nome da Mãe é obrigatório.";
+            
+            const cleanCpf = formData.cpf.replace(/\D/g, "");
+            if (!cleanCpf) return "CPF é obrigatório.";
+            if (!validarCPF(cleanCpf)) return "O CPF informado é inválido.";
+            
+            if (!formData.rg.trim()) return "RG é obrigatório.";
+            
+            if (!formData.dataNascimento.trim()) return "Data de Nascimento é obrigatória.";
+            const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+            if (!dateRegex.test(formData.dataNascimento.trim())) {
+                return "A data de nascimento deve estar no formato DD/MM/AAAA.";
+            }
+            
+            if (!formData.telefone.trim()) return "Telefone é obrigatório.";
+            if (!formData.celular.trim()) return "Celular é obrigatório.";
             if (!formData.email.trim()) return "E-mail é obrigatório.";
+            
             if (formData.deficiencia === "Sim" && !formData.qualDeficiencia.trim()) {
                 return "O campo 'Qual a deficiência?' é obrigatório.";
             }
@@ -225,6 +312,8 @@ export const CadastroFormPerson = ({ tipo, onSubmit, onCancel }: Props) => {
     // Render generic input field
     const renderInput = (item: FormField) => {
         const value = formData[item.key] || "";
+        const fieldErrors = getFieldError(item.key);
+        const hasError = !!fieldErrors;
         
         if (item.options) {
             // Selection dropdown field representation
@@ -232,14 +321,18 @@ export const CadastroFormPerson = ({ tipo, onSubmit, onCancel }: Props) => {
                 <View key={item.key} style={styles.inputWrapper}>
                     <Text style={styles.label}>{item.label}</Text>
                     <Pressable
-                        style={styles.selectInput}
+                        style={[styles.selectInput, hasError && styles.selectInputError]}
                         onPress={() => openPicker(item.key, item.options!)}
+                        disabled={isLoading}
                     >
                         <Text style={[styles.selectInputText, !value && styles.placeholderText]}>
                             {value || item.placeholder}
                         </Text>
                         <Ionicons name="chevron-down" size={18} color="#6b7280" />
                     </Pressable>
+                    {hasError && (
+                        <Text style={styles.errorText}>{fieldErrors[0]}</Text>
+                    )}
                 </View>
             );
         }
@@ -248,7 +341,7 @@ export const CadastroFormPerson = ({ tipo, onSubmit, onCancel }: Props) => {
             <View key={item.key} style={styles.inputWrapper}>
                 <Text style={styles.label}>{item.label}</Text>
                 <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, hasError && styles.textInputError]}
                     value={value}
                     onChangeText={(text) => handleInputChange(item.key, text)}
                     placeholder={item.placeholder}
@@ -257,7 +350,11 @@ export const CadastroFormPerson = ({ tipo, onSubmit, onCancel }: Props) => {
                     secureTextEntry={item.secureTextEntry}
                     autoCapitalize={item.secureTextEntry ? "none" : "sentences"}
                     autoCorrect={false}
+                    editable={!isLoading}
                 />
+                {hasError && (
+                    <Text style={styles.errorText}>{fieldErrors[0]}</Text>
+                )}
             </View>
         );
     };
@@ -413,22 +510,30 @@ export const CadastroFormPerson = ({ tipo, onSubmit, onCancel }: Props) => {
             {/* Navigation buttons at bottom */}
             <View style={styles.footer}>
                 {step > 1 ? (
-                    <Pressable style={styles.backButton} onPress={handleBack}>
+                    <Pressable style={styles.backButton} onPress={handleBack} disabled={isLoading}>
                         <Text style={styles.backButtonText}>Voltar</Text>
                     </Pressable>
                 ) : (
-                    <Pressable style={styles.cancelButton} onPress={onCancel}>
+                    <Pressable style={styles.cancelButton} onPress={onCancel} disabled={isLoading}>
                         <Text style={styles.cancelButtonText}>Cancelar</Text>
                     </Pressable>
                 )}
 
                 {step < 3 ? (
-                    <Pressable style={styles.nextButton} onPress={handleNext}>
+                    <Pressable style={styles.nextButton} onPress={handleNext} disabled={isLoading}>
                         <Text style={styles.nextButtonText}>Avançar</Text>
                     </Pressable>
                 ) : (
-                    <Pressable style={styles.submitButton} onPress={handleRegister}>
-                        <Text style={styles.submitButtonText}>Cadastrar</Text>
+                    <Pressable 
+                        style={[styles.submitButton, isLoading && styles.submitButtonDisabled]} 
+                        onPress={handleRegister} 
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <ActivityIndicator size="small" color="#ffffff" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>Cadastrar</Text>
+                        )}
                     </Pressable>
                 )}
             </View>
@@ -738,6 +843,21 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: "600",
         color: "#4b5563",
+    },
+    selectInputError: {
+        borderColor: "#dc2626",
+    },
+    textInputError: {
+        borderColor: "#dc2626",
+    },
+    errorText: {
+        fontSize: 12,
+        color: "#dc2626",
+        marginTop: 4,
+        fontWeight: "500",
+    },
+    submitButtonDisabled: {
+        backgroundColor: "#9ca3af",
     },
     pickerLoading: {
         paddingVertical: 30,

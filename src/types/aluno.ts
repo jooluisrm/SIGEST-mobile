@@ -94,3 +94,81 @@ export interface ValidationResponseError {
     [key: string]: string[] | undefined;
   };
 }
+
+// Payload enviado ao cadastrar o aluno
+export interface CreateAlunoRequest {
+  period_id?: number | null; // Opcional
+  classroom_id?: number | null; // Opcional
+  name: string;
+  cpf: string;
+  rg: string; // Obrigatório no validador do backend!
+  data_nascimento: string; // Formato YYYY-MM-DD
+  nome_pai: string; // Obrigatório no banco de dados!
+  nome_mae: string;
+  genero?: string | null; // Opcional
+  deficiencia: string;
+  logradouro: string;
+  numero: string;
+  bairro: string;
+  complemento?: string | null; // Opcional
+  cidade: string;
+  estado: string; // Ex: "SP"
+  telefone: string; // Obrigatório no banco de dados!
+  celular: string;
+  email: string;
+  matricula: string; // Matrícula única
+  status: boolean; // Ex: true para ativo
+}
+
+// Dados do aluno retornados pelo backend
+export interface AlunoData {
+  id: number;
+  period_id: number | null;
+  classroom_id: number | null;
+  name: string;
+  cpf: string;
+  rg: string | null;
+  data_nascimento: string;
+  nome_pai: string;
+  nome_mae: string;
+  genero: string | null;
+  deficiencia: string;
+  logradouro: string;
+  numero: string;
+  bairro: string;
+  complemento: string | null;
+  cidade: string;
+  estado: string;
+  telefone: string;
+  celular: string;
+  email: string;
+  matricula: string;
+  status: boolean;
+  turma?: any; // Retorna informações da turma se carregada
+}
+
+// Resposta de sucesso (201 Created)
+export interface CreateAlunoSuccessResponse {
+  status: boolean; // true
+  code: number; // 201
+  message: string;
+  data: AlunoData;
+}
+
+// Resposta de erro de validação (422 Unprocessable Content)
+export interface AlunoValidationErrorResponse {
+  status: boolean; // false
+  code: number; // 422
+  mensagem: {
+    [key in keyof CreateAlunoRequest]?: string[];
+  };
+}
+
+// Resposta de erro genérico do servidor
+export interface AlunoGenericErrorResponse {
+  status: boolean; // false
+  code: number;
+  message: string;
+  data: null;
+}
+
