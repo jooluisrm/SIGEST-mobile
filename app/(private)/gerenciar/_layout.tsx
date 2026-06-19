@@ -102,6 +102,24 @@ export default function GerenciarLayout() {
                 }}
             />
             <Stack.Screen
+                name="periodoletivo/index"
+                options={{
+                    title: "Períodos Letivos",
+                }}
+            />
+            <Stack.Screen
+                name="periodoletivo/cadastro"
+                options={{
+                    title: "Cadastrar Período Letivo",
+                }}
+            />
+            <Stack.Screen
+                name="periodoletivo/[id]"
+                options={{
+                    title: "Detalhes do Período Letivo",
+                }}
+            />
+            <Stack.Screen
                 name="disciplina/index"
                 options={{
                     title: "Gerenciar Disciplinas",

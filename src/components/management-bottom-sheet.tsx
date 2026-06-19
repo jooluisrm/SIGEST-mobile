@@ -29,10 +29,10 @@ const OPTIONS: Option[] = [
     { id: "aluno", title: "Aluno", icon: "school-outline" },
     { id: "professor", title: "Professor", icon: "people-outline" },
     { id: "curso", title: "Curso", icon: "book-outline" },
+    { id: "periodoletivo", title: "Período Letivo", icon: "calendar-outline" },
     { id: "disciplina", title: "Disciplina", icon: "book-outline" },
     { id: "turma", title: "Turma", icon: "school-outline" },
     { id: "avaliacao", title: "Avaliação", icon: "book-outline" },
-
 ];
 
 export const ManagementBottomSheet = ({ visible, onClose, onSelectOption }: Props) => {

@@ -83,7 +83,10 @@ export function useDadosQuery(page: number) {
 ### Camada 3: Validação, Erros e Redirecionamentos
 As telas devem tratar de forma preventiva e reativa todos os comportamentos de requisição:
 
-1. **Validação Local:** Impedir o clique do botão ou envio de requisição caso o formulário esteja incompleto ou inválido localmente.
+1. **Validação Local Obrigatória (Zod + React Hook Form):**
+   * Todo novo formulário de cadastro ou edição deve utilizar obrigatoriamente **React Hook Form** e **Zod** para gerenciamento de estados de formulário e validação client-side.
+   * Todos os schemas do Zod devem ser declarados em arquivos específicos dentro da pasta `src/schema/`.
+   * A nomenclatura dos arquivos de schema deve descrever claramente o que está sendo validado (ex: `src/schema/cadastro-aluno.ts`, `src/schema/cadastro-curso.ts`).
 2. **Tratamento de 422 (Validação do Backend):** Mapear as mensagens de erro nos inputs correspondentes.
 3. **Tratamento de 401 (Não Autenticado):** O interceptor do Axios (`src/lib/axios.ts`) limpará automaticamente os tokens do `expo-secure-store` e o layout redirecionará o usuário ao login.
 4. **Tratamento de 403 (Não Autorizado):** Verificar as `roles` armazenadas globalmente e impedir a renderização ou navegação para a tela exibindo um aviso de restrição.
