@@ -126,6 +126,18 @@ export default function GerenciarLayout() {
                 }}
             />
             <Stack.Screen
+                name="disciplina/cadastro"
+                options={{
+                    title: "Cadastrar Disciplina",
+                }}
+            />
+            <Stack.Screen
+                name="disciplina/[id]"
+                options={{
+                    title: "Detalhes da Disciplina",
+                }}
+            />
+            <Stack.Screen
                 name="turma/index"
                 options={{
                     title: "Gerenciar Turmas",
