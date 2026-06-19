@@ -132,6 +132,18 @@ export default function GerenciarLayout() {
                 }}
             />
             <Stack.Screen
+                name="turma/cadastro"
+                options={{
+                    title: "Cadastrar Turma",
+                }}
+            />
+            <Stack.Screen
+                name="turma/[id]"
+                options={{
+                    title: "Detalhes da Turma",
+                }}
+            />
+            <Stack.Screen
                 name="avaliacao/index"
                 options={{
                     title: "Gerenciar Avaliações",
