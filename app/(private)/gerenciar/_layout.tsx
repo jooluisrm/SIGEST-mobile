@@ -90,6 +90,18 @@ export default function GerenciarLayout() {
                 }}
             />
             <Stack.Screen
+                name="curso/cadastro"
+                options={{
+                    title: "Cadastrar Curso",
+                }}
+            />
+            <Stack.Screen
+                name="curso/[id]"
+                options={{
+                    title: "Detalhes do Curso",
+                }}
+            />
+            <Stack.Screen
                 name="disciplina/index"
                 options={{
                     title: "Gerenciar Disciplinas",

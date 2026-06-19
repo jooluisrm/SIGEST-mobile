@@ -479,7 +479,7 @@ export const CadastroFormPerson = ({
     return (
         <KeyboardAvoidingView 
             style={styles.container}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
             keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
         >
             {/* Stepper visual indicator */}
@@ -727,7 +727,7 @@ const styles = StyleSheet.create({
     },
     formScrollContent: {
         padding: 20,
-        paddingBottom: 40,
+        paddingBottom: 150,
     },
     formSection: {
         gap: 16,
