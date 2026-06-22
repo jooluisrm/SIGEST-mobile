@@ -99,3 +99,69 @@ A experiência visual do usuário deve parecer instantânea e fluida.
 * **Carregamento Inicial:** Evitar spinners estáticos de carregamento (`ActivityIndicator`) no meio da tela sempre que possível. Em vez disso, utilizar **Skeletons** (telas simuladas com blocos cinzas pulsantes) que correspondam ao formato dos cards reais que serão renderizados.
 * **Feedback de Erro:** Exibir erros gerais em banners vermelhos elegantes com bordas arredondadas e texto legível, sem bloquear a navegação com popups irritantes, a menos que seja um caso extremo.
 * **Desativação de Elementos:** Enquanto uma requisição estiver em progresso, desativar (`disabled={isLoading}`) todos os botões e inputs para evitar requisições em lote duplicadas.
+
+---
+
+## 5. Regra Obrigatória de Testes
+
+Toda nova implementação, alteração de fluxo, ajuste de rota, mudança de payload ou correção de bug deve vir acompanhada de teste atualizado ou novo teste criado.
+
+### O que deve ser coberto
+* **Rotas de API:** validar URL, query params, body e método HTTP.
+* **Busca e paginação:** validar quando a busca dispara, quando não dispara e como o loading se comporta durante a troca de página.
+* **Cadastro/edição/exclusão:** validar submit, invalidação de cache e atualização da interface.
+* **Carregamentos e estados vazios:** validar `isLoading`, `empty state`, erro e bloqueio de inputs/botões.
+* **Fluxos críticos:** login, listagens principais e formulários mais usados devem ter cobertura mínima obrigatória.
+
+### Estrutura padrão da pasta de testes
+Os testes devem ficar em `__tests__/`, organizados por área e por módulo.
+
+```text
+__tests__/
+  api/
+    aluno/
+      getAlunos.test.ts
+      createAluno.test.ts
+    curso/
+      getCourses.test.ts
+  screens/
+    gerenciar/
+      periodoletivo/
+        index.test.tsx
+      professor/
+        cadastro.test.tsx
+  components/
+    gerenciar/
+      periodoletivo/
+        periodoletivo-form.test.tsx
+  hooks/
+    auth/
+      useAuth.test.ts
+  utils/
+    masks.test.ts
+  mocks/
+    axios.ts
+    queryClient.ts
+```
+
+### Convenção de nomes
+* Arquivos de tela: `index.test.tsx`, `cadastro.test.tsx`, `[id].test.tsx`
+* Arquivos de API/hook: `nomeDaFuncao.test.ts`
+* Arquivos de componente: `nome-do-componente.test.tsx`
+* Arquivos utilitários: `nomeDoHelper.test.ts`
+
+### Regra de manutenção
+* Se a feature muda comportamento, o teste correspondente deve mudar junto.
+* Se a feature cria um novo fluxo, o teste novo deve nascer junto com ela.
+* Mudança de rota, mensagem, loading, validação ou cache sem teste não deve ser considerada finalizada.
+---
+
+## 6. Comando Obrigatorio de Validacao
+
+Sempre que criar uma feature, alterar uma rota, ajustar validacao, mexer em loading/cache ou corrigir bug, rode:
+
+```bash
+npm run test:all
+```
+
+O trabalho so deve ser considerado concluido se esse comando passar sem falhas.
