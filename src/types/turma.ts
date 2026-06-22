@@ -3,7 +3,7 @@
  */
 export interface Classroom {
   id: number;
-  period_id: number;
+  serie_id: number;
   name: string;
   max_students: number;
   shift: string;
@@ -87,7 +87,7 @@ export interface ValidationResponseError {
  * Payload enviado ao cadastrar a turma.
  */
 export interface CreateClassroomRequest {
-  period_id: number;
+  serie_id: number;
   name: string;
   max_students: number;
   shift: string;
@@ -139,7 +139,7 @@ export interface GetClassroomResponse {
  * Payload de atualização de turma.
  */
 export interface UpdateClassroomRequest {
-  period_id?: number;
+  serie_id?: number;
   name?: string;
   max_students?: number;
   shift?: string;

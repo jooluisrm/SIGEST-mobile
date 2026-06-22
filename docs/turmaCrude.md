@@ -24,7 +24,7 @@ Todas as rotas de gerenciamento de turmas exigem autenticação do usuário via 
       "data": [
         {
           "id": 1,
-          "period_id": 2,
+          "serie_id": 2,
           "name": "6ª ano - Turma A",
           "max_students": 30,
           "shift": "Matutino",
@@ -43,7 +43,7 @@ Todas as rotas de gerenciamento de turmas exigem autenticação do usuário via 
 * **URL:** `/api/classrooms/value/{value}`
   - `{value}`: Termo de busca (mínimo de 3 caracteres).
 
-### C. Listar Turmas por Série (Period)
+### C. Listar Turmas por Série (Serie)
 * **Método:** `GET`
 * **URL:** `/api/classrooms/{serie_id}/turmas-por-serie`
 * **Descrição:** Retorna a lista contendo as turmas associadas a uma série escolar. Útil para dropdowns em tempo real.
@@ -68,7 +68,7 @@ Todas as rotas de gerenciamento de turmas exigem autenticação do usuário via 
 
 ### H. Enturmação Automática (Gerar Turmas Automaticamente)
 * **Método:** `GET`
-* **URL:** `/api/periods/{period_id}/generate-classrooms`
+* **URL:** `/api/series/{serie_id}/generate-classrooms`
 * **Query Params (Obrigatórios):**
   - `max_students` (int): Limite máximo de alunos por turma (ex: `30`).
   - `shift` (string): Turno das turmas (`"Matutino"`, `"Vespertino"` ou `"Noturno"`).
@@ -80,7 +80,7 @@ Todas as rotas de gerenciamento de turmas exigem autenticação do usuário via 
 
 Os inputs do formulário de criação/edição devem seguir as regras de validação client-side via **Zod** no arquivo `src/schema/cadastro-turma.ts`:
 
-* **`period_id` (Série):** Inteiro positivo obrigatório.
+* **`serie_id` (Série):** Inteiro positivo obrigatório.
 * **`name` (Nome da Turma):** Obrigatório, string de 5 a 30 caracteres. Deve ser único (validado também no backend).
 * **`max_students` (Capacidade Máxima):** Inteiro positivo, valor entre 5 e 60.
 * **`shift` (Turno):** Obrigatório, com valores restritos a `"Matutino"`, `"Vespertino"` ou `"Noturno"`.
@@ -115,7 +115,7 @@ O frontend deve mapear estes retornos e exibi-los abaixo de cada input no formul
 * **Arquivo:** `src/api/turma.ts`
 * **Hooks a Implementar:**
   * `useClassroomsInfiniteQuery`: Carrega turmas gerais paginadas, suportando busca debounced.
-  * `useClassroomsByPeriodQuery`: Carrega turmas filtradas por Série.
+  * `useClassroomsBySerieQuery`: Carrega turmas filtradas por Série.
   * `useClassroomQuery`: Detalha uma turma por ID.
   * `useCreateClassroomMutation`: Cadastra nova turma.
   * `useUpdateClassroomMutation`: Atualiza turma existente.

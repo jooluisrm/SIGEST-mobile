@@ -43,10 +43,10 @@ export default function CadastroTurma() {
             status: dados.status,
         };
 
-        // period_id is only sent during creation or if required.
+        // serie_id is only sent during creation or if required.
         // The API rules say it's required in StoreClassroomRequest.
         // We'll send it always.
-        payload.period_id = dados.period_id;
+        payload.serie_id = dados.serie_id;
 
         try {
             if (id) {

@@ -37,9 +37,9 @@ export async function getClassroomsByName(name: string, page = 1) {
 /**
  * Busca as turmas associadas a uma série (Period) específica.
  */
-export async function getClassroomsByPeriod(periodId: number | string) {
+export async function getClassroomsBySerie(serieId: number | string) {
   const { data } = await api.get<ClassroomApiResponse>(
-    `/classrooms/${periodId}/turmas-por-serie`
+    `/classrooms/${serieId}/turmas-por-serie`
   );
   return data;
 }
@@ -80,12 +80,12 @@ export async function deleteClassroom(id: string | number) {
  * Executa a enturmação automática para uma série (Period) específica.
  */
 export async function generateClassrooms(
-  periodId: number | string,
+  serieId: number | string,
   maxStudents: number,
   shift: string
 ) {
   const { data } = await api.get<GenerateClassroomsSuccessResponse>(
-    `/periods/${periodId}/generate-classrooms`,
+    `/series/${serieId}/generate-classrooms`,
     {
       params: {
         max_students: maxStudents,
@@ -131,11 +131,11 @@ export function useClassroomsInfiniteQuery(searchTerm = "") {
 /**
  * Hook para buscar as turmas de uma série específica (útil para dropdowns encadeados).
  */
-export function useClassroomsByPeriodQuery(periodId: number | string | undefined) {
+export function useClassroomsBySerieQuery(serieId: number | string | undefined) {
   return useQuery({
-    queryKey: ["classrooms", "byPeriod", String(periodId)],
-    queryFn: () => getClassroomsByPeriod(periodId!),
-    enabled: !!periodId,
+    queryKey: ["classrooms", "bySerie", String(serieId)],
+    queryFn: () => getClassroomsBySerie(serieId!),
+    enabled: !!serieId,
     staleTime: 1000 * 30,
   });
 }
@@ -202,14 +202,14 @@ export function useGenerateClassroomsMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
-      periodId,
+      serieId,
       maxStudents,
       shift,
     }: {
-      periodId: number | string;
+      serieId: number | string;
       maxStudents: number;
       shift: string;
-    }) => generateClassrooms(periodId, maxStudents, shift),
+    }) => generateClassrooms(serieId, maxStudents, shift),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["classrooms"] });
     },

@@ -26,13 +26,7 @@ export default function DetalheDisciplina() {
 
     const disciplina = responseData?.data;
 
-    // Fetch corresponding classroom (Turma) details
-    const { data: classroomResponse } = useClassroomQuery(disciplina?.classroom_id || "");
-    const classroomName = classroomResponse?.data?.name || "Carregando turma...";
 
-    // Fetch corresponding professor details
-    const { data: professorResponse } = useProfessorQuery(disciplina?.professor_id || "");
-    const professorName = professorResponse?.data?.name || "Carregando professor...";
 
     useEffect(() => {
         navigation.setOptions({
@@ -155,17 +149,7 @@ export default function DetalheDisciplina() {
                     <Text style={styles.infoValue}>{disciplina.id}</Text>
                 </View>
 
-                <View style={styles.infoRow}>
-                    <Ionicons name="school-outline" size={18} color="#6b7280" style={styles.infoIcon} />
-                    <Text style={styles.infoLabel}>Turma Vinculada</Text>
-                    <Text style={styles.infoValue}>{classroomName}</Text>
-                </View>
 
-                <View style={styles.infoRow}>
-                    <Ionicons name="person-outline" size={18} color="#6b7280" style={styles.infoIcon} />
-                    <Text style={styles.infoLabel}>Professor</Text>
-                    <Text style={styles.infoValue}>{professorName}</Text>
-                </View>
 
                 <View style={styles.infoRow}>
                     <Ionicons name="time-outline" size={18} color="#6b7280" style={styles.infoIcon} />

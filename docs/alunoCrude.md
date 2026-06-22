@@ -60,10 +60,7 @@ Para otimizar o carregamento e evitar erros desnecessários, a busca do frontend
 * **Data de Nascimento:** O formulário recebe a data no formato brasileiro `DD/MM/AAAA` e a converte para o formato ISO `YYYY-MM-DD` antes do envio.
 * **Deficiência:** Caso a opção "Possui alguma deficiência?" seja "Não", é enviado `"Nenhuma"`. Caso seja "Sim", envia-se a descrição digitada em `qualDeficiencia`.
 
-### Mapeamento de Período e Turma
-Os valores textuais do dropdown no formulário são mapeados para IDs inteiros:
-* **Períodos:** `"1º Ano"` -> `1`, `"2º Ano"` -> `2`, `"3º Ano"` -> `3`, `"4º Ano"` -> `4`.
-* **Turmas:** `"Turma A"` -> `1`, `"Turma B"` -> `2`, `"Turma C"` -> `3`.
+
 
 ### Tratamento de Erro de Validação 422
 Em vez do tradicional `errors` do Laravel, a API customizada retorna as mensagens sob a chave **`mensagem`** (singular, em português):
@@ -106,7 +103,7 @@ A integração está centralizada em [aluno.ts (API)](file:///c:/Users/joaol/Doc
 ### A. Detalhe do Aluno (Visualização)
 * **Endpoint:** `GET /api/alunos/{id}`
 * **Tratativas no Front:**
-  * **Relação `turma`:** O objeto retornado possui a chave `turma` que pode vir `null` caso o aluno não esteja enturmado. O frontend deve tratar essa exibição sem falhar.
+
   * **Tratamento de 404 (Não Encontrado):** Caso o aluno não exista ou tenha sido removido, exibe-se um alerta amigável e redireciona o usuário para a listagem principal.
 
 ### B. Edição do Aluno

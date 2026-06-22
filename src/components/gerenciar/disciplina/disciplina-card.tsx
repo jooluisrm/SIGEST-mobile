@@ -11,8 +11,8 @@ type Props = {
     name: string;
     areaConhecimento: string;
     cargaHoraria: string;
-    classroomName: string;
-    professorName: string;
+    classroomName?: string;
+    professorName?: string;
     status: boolean | number;
     onPress: () => void;
 };
@@ -59,19 +59,23 @@ export const DisciplinaCard = ({
                 </View>
 
                 {/* Classroom and Professor Info Row */}
-                <View style={styles.detailRow}>
-                    <Ionicons name="school-outline" size={14} color="#6b7280" style={styles.icon} />
-                    <Text style={styles.subDetailText} numberOfLines={1} ellipsizeMode="tail">
-                        Turma: {classroomName}
-                    </Text>
-                </View>
+                {!!classroomName && (
+                    <View style={styles.detailRow}>
+                        <Ionicons name="school-outline" size={14} color="#6b7280" style={styles.icon} />
+                        <Text style={styles.subDetailText} numberOfLines={1} ellipsizeMode="tail">
+                            Turma: {classroomName}
+                        </Text>
+                    </View>
+                )}
 
-                <View style={styles.detailRow}>
-                    <Ionicons name="person-outline" size={14} color="#6b7280" style={styles.icon} />
-                    <Text style={styles.subDetailText} numberOfLines={1} ellipsizeMode="tail">
-                        Prof: {professorName}
-                    </Text>
-                </View>
+                {!!professorName && (
+                    <View style={styles.detailRow}>
+                        <Ionicons name="person-outline" size={14} color="#6b7280" style={styles.icon} />
+                        <Text style={styles.subDetailText} numberOfLines={1} ellipsizeMode="tail">
+                            Prof: {professorName}
+                        </Text>
+                    </View>
+                )}
 
                 {/* Carga Horária Row */}
                 <View style={styles.metaRow}>

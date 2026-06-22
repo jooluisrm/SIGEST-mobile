@@ -25,11 +25,11 @@ export default function GerenciarTurmas() {
 
     // State for Automatic Generation Modal (Enturmação)
     const [generateModalVisible, setGenerateModalVisible] = useState(false);
-    const [selectedPeriodId, setSelectedPeriodId] = useState<number | null>(null);
-    const [selectedPeriodName, setSelectedPeriodName] = useState("");
+    const [selectedSerieId, setSelectedSerieId] = useState<number | null>(null);
+    const [selectedSerieName, setSelectedSerieName] = useState("");
     const [maxStudents, setMaxStudents] = useState("30");
     const [selectedShift, setSelectedShift] = useState("Matutino");
-    const [periodPickerVisible, setPeriodPickerVisible] = useState(false);
+    const [seriePickerVisible, setSeriePickerVisible] = useState(false);
 
     // Debounce search text
     useEffect(() => {
@@ -55,8 +55,8 @@ export default function GerenciarTurmas() {
 
     const generateMutation = useGenerateClassroomsMutation();
 
-    // Map period_id to Period (Série) Name
-    const periodMap = useMemo(() => {
+    // Map serie_id to Serie Name
+    const serieMap = useMemo(() => {
         const map = new Map<number, string>();
         periods.forEach((p) => map.set(p.id, p.name));
         return map;
@@ -112,7 +112,7 @@ export default function GerenciarTurmas() {
 
     // Execute the auto classroom generation
     const handleConfirmGenerate = () => {
-        if (!selectedPeriodId) {
+        if (!selectedSerieId) {
             Alert.alert("Campo Obrigatório", "Selecione uma série escolar.");
             return;
         }
@@ -124,7 +124,7 @@ export default function GerenciarTurmas() {
         }
 
         generateMutation.mutate({
-            periodId: selectedPeriodId,
+            serieId: selectedSerieId,
             maxStudents: maxNum,
             shift: selectedShift
         }, {
@@ -134,8 +134,8 @@ export default function GerenciarTurmas() {
                     res.message || "Turmas geradas e alunos distribuídos com sucesso!"
                 );
                 setGenerateModalVisible(false);
-                setSelectedPeriodId(null);
-                setSelectedPeriodName("");
+                setSelectedSerieId(null);
+                setSelectedSerieName("");
                 setMaxStudents("30");
                 setSelectedShift("Matutino");
                 refetch();
@@ -192,7 +192,7 @@ export default function GerenciarTurmas() {
                     renderItem={({ item }) => (
                         <TurmaCard
                             name={item.name}
-                            periodName={periodMap.get(item.period_id) || `Série ID: ${item.period_id}`}
+                            periodName={serieMap.get(item.serie_id) || `Série ID: ${item.serie_id}`}
                             maxStudents={item.max_students}
                             shift={item.shift}
                             status={item.status}
@@ -242,10 +242,10 @@ export default function GerenciarTurmas() {
                             <Text style={styles.modalLabel}>Série Escolar *</Text>
                             <Pressable 
                                 style={styles.modalSelectInput}
-                                onPress={() => setPeriodPickerVisible(true)}
+                                onPress={() => setSeriePickerVisible(true)}
                             >
-                                <Text style={[styles.modalSelectText, !selectedPeriodName && styles.placeholderText]}>
-                                    {selectedPeriodName || "Selecione a série"}
+                                <Text style={[styles.modalSelectText, !selectedSerieName && styles.placeholderText]}>
+                                    {selectedSerieName || "Selecione a série"}
                                 </Text>
                                 <Ionicons name="chevron-down" size={18} color="#6b7280" />
                             </Pressable>
@@ -312,10 +312,10 @@ export default function GerenciarTurmas() {
 
                 {/* Inner Series Picker Modal */}
                 <Modal
-                    visible={periodPickerVisible}
+                    visible={seriePickerVisible}
                     transparent
                     animationType="fade"
-                    onRequestClose={() => setPeriodPickerVisible(false)}
+                    onRequestClose={() => setSeriePickerVisible(false)}
                 >
                     <View style={styles.pickerBackdrop}>
                         <View style={styles.pickerModal}>
@@ -326,9 +326,9 @@ export default function GerenciarTurmas() {
                                         key={p.id}
                                         style={styles.pickerOption}
                                         onPress={() => {
-                                            setSelectedPeriodId(p.id);
-                                            setSelectedPeriodName(p.name);
-                                            setPeriodPickerVisible(false);
+                                            setSelectedSerieId(p.id);
+                                            setSelectedSerieName(p.name);
+                                            setSeriePickerVisible(false);
                                         }}
                                     >
                                         <Text style={styles.pickerOptionText}>{p.name}</Text>
@@ -337,7 +337,7 @@ export default function GerenciarTurmas() {
                             </ScrollView>
                             <Pressable 
                                 style={styles.pickerCloseBtn}
-                                onPress={() => setPeriodPickerVisible(false)}
+                                onPress={() => setSeriePickerVisible(false)}
                             >
                                 <Text style={styles.pickerCloseBtnText}>Fechar</Text>
                             </Pressable>

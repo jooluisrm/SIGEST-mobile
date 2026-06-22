@@ -3,8 +3,8 @@
  * Mapeado a partir de AlunoResource.
  */
 export interface Aluno {
-  period_id: number | null;
-  classroom_id: number | null;
+  period_id?: number | null;
+  classroom_id?: number | null;
   id: number;
   name: string;
   cpf: string;
@@ -123,8 +123,8 @@ export interface CreateAlunoRequest {
 // Dados do aluno retornados pelo backend
 export interface AlunoData {
   id: number;
-  period_id: number | null;
-  classroom_id: number | null;
+  period_id?: number | null;
+  classroom_id?: number | null;
   name: string;
   cpf: string;
   rg: string | null;

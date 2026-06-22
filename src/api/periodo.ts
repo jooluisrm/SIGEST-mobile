@@ -13,7 +13,7 @@ export type PeriodApiResponse = PeriodPaginatedResponse | PeriodEmptyResponse;
  * Busca a lista geral de períodos/séries paginada.
  */
 export async function getPeriods(page = 1) {
-  const { data } = await api.get<PeriodApiResponse>(`/periods`, {
+  const { data } = await api.get<PeriodApiResponse>(`/series`, {
     params: { page },
   });
   return data;
@@ -24,7 +24,7 @@ export async function getPeriods(page = 1) {
  */
 export async function getPeriodsByPeriodoLetivo(periodoLetivoId: number | string) {
   const { data } = await api.get<PeriodApiResponse>(
-    `/periods/${periodoLetivoId}/series-por-periodo-letivo`
+    `/series/${periodoLetivoId}/series-por-periodo-letivo`
   );
   return data;
 }
@@ -33,7 +33,7 @@ export async function getPeriodsByPeriodoLetivo(periodoLetivoId: number | string
  * Busca dados de uma única série pelo ID.
  */
 export async function getPeriodById(id: string | number) {
-  const { data } = await api.get<GetPeriodResponse>(`/periods/${id}`);
+  const { data } = await api.get<GetPeriodResponse>(`/series/${id}`);
   return data;
 }
 
@@ -41,7 +41,7 @@ export async function getPeriodById(id: string | number) {
  * Busca a matriz curricular (disciplinas) de uma série específica pelo ID.
  */
 export async function getPeriodMatriz(id: string | number) {
-  const { data } = await api.get<PeriodMatrizResponse>(`/periods/${id}/matriz`);
+  const { data } = await api.get<PeriodMatrizResponse>(`/series/${id}/matriz`);
   return data;
 }
 

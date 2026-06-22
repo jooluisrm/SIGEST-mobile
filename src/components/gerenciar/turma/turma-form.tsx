@@ -36,8 +36,8 @@ export const TurmaForm = ({
     onClearError,
     initialData
 }: Props) => {
-    const [periodModalVisible, setPeriodModalVisible] = useState(false);
-    const [selectedPeriodName, setSelectedPeriodName] = useState("");
+    const [serieModalVisible, setSerieModalVisible] = useState(false);
+    const [selectedSerieName, setSelectedSerieName] = useState("");
     const hasInitialized = useRef(false);
 
     // React Hook Form initialization with Zod resolver
@@ -50,7 +50,7 @@ export const TurmaForm = ({
     } = useForm<CadastroTurmaFormData>({
         resolver: zodResolver(cadastroTurmaSchema),
         defaultValues: {
-            period_id: initialData?.period_id || 0,
+            serie_id: initialData?.serie_id || 0,
             name: initialData?.name || "",
             max_students: initialData?.max_students || 30,
             shift: (initialData?.shift as any) || "Matutino",
@@ -58,7 +58,7 @@ export const TurmaForm = ({
         }
     });
 
-    const watchPeriodId = watch("period_id");
+    const watchSerieId = watch("serie_id");
     const watchShift = watch("shift");
     const watchStatus = watch("status");
 
@@ -88,7 +88,7 @@ export const TurmaForm = ({
     // Initialize period name for display if editing
     useEffect(() => {
         if (initialData && !hasInitialized.current) {
-            setValue("period_id", initialData.period_id);
+            setValue("serie_id", initialData.serie_id);
             setValue("name", initialData.name);
             setValue("max_students", initialData.max_students);
             setValue("shift", initialData.shift as any);
@@ -99,13 +99,13 @@ export const TurmaForm = ({
 
     // Update the period name displayed when list loads or period_id changes
     useEffect(() => {
-        if (watchPeriodId && periods.length > 0) {
-            const match = periods.find((p) => p.id === watchPeriodId);
+        if (watchSerieId && periods.length > 0) {
+            const match = periods.find((p) => p.id === watchSerieId);
             if (match) {
-                setSelectedPeriodName(match.name);
+                setSelectedSerieName(match.name);
             }
         }
-    }, [watchPeriodId, periods]);
+    }, [watchSerieId, periods]);
 
     const getFieldError = (key: string): string | undefined => {
         // Client-side react-hook-form errors
@@ -136,17 +136,17 @@ export const TurmaForm = ({
         }
     };
 
-    const handleSelectPeriod = (id: number, name: string) => {
-        handleInputChange("period_id", id);
-        setSelectedPeriodName(name);
-        setPeriodModalVisible(false);
+    const handleSelectSerie = (id: number, name: string) => {
+        handleInputChange("serie_id", id);
+        setSelectedSerieName(name);
+        setSerieModalVisible(false);
     };
 
     const onFormSubmit = (data: CadastroTurmaFormData) => {
         onSubmit(data);
     };
 
-    const periodErrors = getFieldError("period_id");
+    const serieErrors = getFieldError("serie_id");
     const nameErrors = getFieldError("name");
     const maxStudentsErrors = getFieldError("max_students");
     const shiftErrors = getFieldError("shift");
@@ -175,15 +175,15 @@ export const TurmaForm = ({
                         <Pressable
                             style={[
                                 styles.selectInput, 
-                                !!periodErrors && styles.selectInputError,
-                                periodModalVisible && styles.selectInputFocused,
+                                !!serieErrors && styles.selectInputError,
+                                serieModalVisible && styles.selectInputFocused,
                                 isEdit && styles.selectInputDisabled
                             ]}
-                            onPress={() => !isEdit && setPeriodModalVisible(true)}
+                            onPress={() => !isEdit && setSerieModalVisible(true)}
                             disabled={isLoading || isEdit}
                         >
-                            <Text style={[styles.selectInputText, !selectedPeriodName && styles.placeholderText]}>
-                                {selectedPeriodName || "Selecione a série"}
+                            <Text style={[styles.selectInputText, !selectedSerieName && styles.placeholderText]}>
+                                {selectedSerieName || "Selecione a série"}
                             </Text>
                             <Ionicons name="chevron-down" size={18} color="#6b7280" />
                         </Pressable>
@@ -192,8 +192,8 @@ export const TurmaForm = ({
                                 A série escolar não pode ser alterada após a criação da turma.
                             </Text>
                         )}
-                        {!!periodErrors && (
-                            <Text style={styles.errorText}>{periodErrors}</Text>
+                        {!!serieErrors && (
+                            <Text style={styles.errorText}>{serieErrors}</Text>
                         )}
                     </View>
 
@@ -338,10 +338,10 @@ export const TurmaForm = ({
 
             {/* Period/Serie Picker Modal */}
             <Modal
-                visible={periodModalVisible}
+                visible={serieModalVisible}
                 transparent
                 animationType="fade"
-                onRequestClose={() => setPeriodModalVisible(false)}
+                onRequestClose={() => setSerieModalVisible(false)}
             >
                 <View style={styles.pickerBackdrop}>
                     <View style={styles.pickerModal}>
@@ -358,7 +358,7 @@ export const TurmaForm = ({
                                     <Pressable
                                         key={p.id}
                                         style={styles.pickerOption}
-                                        onPress={() => handleSelectPeriod(p.id, p.name)}
+                                        onPress={() => handleSelectSerie(p.id, p.name)}
                                     >
                                         <Text style={styles.pickerOptionText}>{p.name}</Text>
                                     </Pressable>
@@ -373,7 +373,7 @@ export const TurmaForm = ({
                         
                         <Pressable 
                             style={styles.pickerCloseButton} 
-                            onPress={() => setPeriodModalVisible(false)}
+                            onPress={() => setSerieModalVisible(false)}
                         >
                             <Text style={styles.pickerCloseButtonText}>Fechar</Text>
                         </Pressable>

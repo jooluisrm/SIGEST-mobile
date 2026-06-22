@@ -38,21 +38,8 @@ export const DisciplinaForm = ({
     onClearError,
     initialData
 }: Props) => {
-    // Modal states
-    const [classroomModalVisible, setClassroomModalVisible] = useState(false);
-    const [professorModalVisible, setProfessorModalVisible] = useState(false);
-    
-    // Search terms inside modals
-    const [classroomSearch, setClassroomSearch] = useState("");
-    const [debouncedClassroomSearch, setDebouncedClassroomSearch] = useState("");
-    const [professorSearch, setProfessorSearch] = useState("");
-    const [debouncedProfessorSearch, setDebouncedProfessorSearch] = useState("");
-
-    // Display names
-    const [selectedClassroomName, setSelectedClassroomName] = useState("");
-    const [selectedProfessorName, setSelectedProfessorName] = useState("");
-
     const hasInitialized = useRef(false);
+    const isEdit = !!initialData;
 
     // React Hook Form initialization
     const { 
@@ -68,70 +55,11 @@ export const DisciplinaForm = ({
             area_conhecimento: initialData?.area_conhecimento || "",
             carga_horaria: initialData?.carga_horaria || "",
             ementa: initialData?.ementa || "",
-            classroom_id: initialData?.classroom_id || 0,
-            professor_id: initialData?.professor_id || 0,
             status: initialData ? (initialData.status === true || initialData.status === 1) : true,
         }
     });
 
-    const watchClassroomId = watch("classroom_id");
-    const watchProfessorId = watch("professor_id");
     const watchStatus = watch("status");
-
-    // Debounce classroom search text
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedClassroomSearch(classroomSearch);
-        }, 500);
-        return () => clearTimeout(handler);
-    }, [classroomSearch]);
-
-    // Debounce professor search text
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedProfessorSearch(professorSearch);
-        }, 500);
-        return () => clearTimeout(handler);
-    }, [professorSearch]);
-
-    // Fetch Classrooms and Professors
-    const { 
-        data: classroomsResponse, 
-        isLoading: isLoadingClassrooms,
-        fetchNextPage: fetchNextClassroomsPage,
-        hasNextPage: hasNextClassroomsPage,
-        isFetchingNextPage: isFetchingNextClassroomsPage
-    } = useClassroomsInfiniteQuery(debouncedClassroomSearch);
-
-    const { 
-        data: professorsResponse, 
-        isLoading: isLoadingProfessors,
-        fetchNextPage: fetchNextProfessorsPage,
-        hasNextPage: hasNextProfessorsPage,
-        isFetchingNextPage: isFetchingNextProfessorsPage
-    } = useProfessorsInfiniteQuery(debouncedProfessorSearch);
-
-    // Flatten lists
-    const classrooms = useMemo(() => {
-        if (!classroomsResponse?.pages) return [];
-        return classroomsResponse.pages.flatMap((page) => {
-            if (!page || !page.data) return [];
-            if (Array.isArray(page.data)) return page.data;
-            if (typeof page.data === "object" && "data" in page.data && Array.isArray(page.data.data)) {
-                return page.data.data;
-            }
-            return [];
-        });
-    }, [classroomsResponse]);
-
-    const professors = useMemo(() => {
-        if (!professorsResponse?.pages) return [];
-        return professorsResponse.pages.flatMap((page) => {
-            if (!page || !page.data) return [];
-            if (Array.isArray(page.data)) return page.data;
-            return [];
-        });
-    }, [professorsResponse]);
 
     // Initialize edit fields once
     useEffect(() => {
@@ -140,37 +68,10 @@ export const DisciplinaForm = ({
             setValue("area_conhecimento", initialData.area_conhecimento);
             setValue("carga_horaria", initialData.carga_horaria);
             setValue("ementa", initialData.ementa);
-            setValue("classroom_id", initialData.classroom_id);
-            setValue("professor_id", initialData.professor_id);
             setValue("status", initialData.status === true || initialData.status === 1);
             hasInitialized.current = true;
         }
     }, [initialData, setValue]);
-
-    // Resolve Classroom display name
-    useEffect(() => {
-        if (watchClassroomId && classrooms.length > 0) {
-            const match = classrooms.find((c) => c.id === watchClassroomId);
-            if (match) {
-                setSelectedClassroomName(match.name);
-            }
-        } else if (initialData && watchClassroomId === initialData.classroom_id && !selectedClassroomName) {
-            // Safe fallback if the matched items haven't loaded yet
-            setSelectedClassroomName(`Turma #${watchClassroomId}`);
-        }
-    }, [watchClassroomId, classrooms, initialData]);
-
-    // Resolve Professor display name
-    useEffect(() => {
-        if (watchProfessorId && professors.length > 0) {
-            const match = professors.find((p) => p.id_professor === watchProfessorId);
-            if (match) {
-                setSelectedProfessorName(match.name);
-            }
-        } else if (initialData && watchProfessorId === initialData.professor_id && !selectedProfessorName) {
-            setSelectedProfessorName(`Professor #${watchProfessorId}`);
-        }
-    }, [watchProfessorId, professors, initialData]);
 
     const getFieldError = (key: string): string | undefined => {
         if (errors[key as keyof CadastroDisciplinaFormData]) {
@@ -194,20 +95,6 @@ export const DisciplinaForm = ({
             }
         }
     };
-
-    const handleSelectClassroom = (id: number, name: string) => {
-        handleInputChange("classroom_id", id);
-        setSelectedClassroomName(name);
-        setClassroomModalVisible(false);
-    };
-
-    const handleSelectProfessor = (id: number, name: string) => {
-        handleInputChange("professor_id", id);
-        setSelectedProfessorName(name);
-        setProfessorModalVisible(false);
-    };
-
-    const isEdit = !!initialData;
 
     return (
         <KeyboardAvoidingView 
@@ -346,49 +233,7 @@ export const DisciplinaForm = ({
                         {!!getFieldError("ementa") && (
                             <Text style={styles.errorText}>{getFieldError("ementa")}</Text>
                         )}
-                    </View>
-
-                    {/* Campo: Turma */}
-                    <View style={styles.inputWrapper}>
-                        <Text style={styles.label}>Turma *</Text>
-                        <Pressable
-                            style={[
-                                styles.selectInput, 
-                                !!getFieldError("classroom_id") && styles.selectInputError,
-                            ]}
-                            onPress={() => setClassroomModalVisible(true)}
-                            disabled={isLoading}
-                        >
-                            <Text style={[styles.selectInputText, !selectedClassroomName && styles.placeholderText]}>
-                                {selectedClassroomName || "Selecione a turma"}
-                            </Text>
-                            <Ionicons name="chevron-down" size={18} color="#6b7280" />
-                        </Pressable>
-                        {!!getFieldError("classroom_id") && (
-                            <Text style={styles.errorText}>{getFieldError("classroom_id")}</Text>
-                        )}
-                    </View>
-
-                    {/* Campo: Professor */}
-                    <View style={styles.inputWrapper}>
-                        <Text style={styles.label}>Professor *</Text>
-                        <Pressable
-                            style={[
-                                styles.selectInput, 
-                                !!getFieldError("professor_id") && styles.selectInputError,
-                            ]}
-                            onPress={() => setProfessorModalVisible(true)}
-                            disabled={isLoading}
-                        >
-                            <Text style={[styles.selectInputText, !selectedProfessorName && styles.placeholderText]}>
-                                {selectedProfessorName || "Selecione o professor"}
-                            </Text>
-                            <Ionicons name="chevron-down" size={18} color="#6b7280" />
-                        </Pressable>
-                        {!!getFieldError("professor_id") && (
-                            <Text style={styles.errorText}>{getFieldError("professor_id")}</Text>
-                        )}
-                    </View>
+                      </View>
 
                     {/* Campo: Status */}
                     <View style={styles.switchWrapper}>
@@ -433,145 +278,7 @@ export const DisciplinaForm = ({
                         </Text>
                     )}
                 </Pressable>
-            </View>
-
-            {/* Classroom Picker Modal */}
-            <Modal
-                visible={classroomModalVisible}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setClassroomModalVisible(false)}
-            >
-                <View style={styles.pickerBackdrop}>
-                    <View style={styles.pickerModal}>
-                        <Text style={styles.pickerTitle}>Selecione a Turma</Text>
-                        
-                        <View style={styles.pickerSearchContainer}>
-                            <Ionicons name="search" size={16} color="#9ca3af" />
-                            <TextInput
-                                style={styles.pickerSearchInput}
-                                value={classroomSearch}
-                                onChangeText={setClassroomSearch}
-                                placeholder="Buscar turma..."
-                                placeholderTextColor="#9ca3af"
-                                autoCorrect={false}
-                            />
-                        </View>
-
-                        {isLoadingClassrooms && classrooms.length === 0 ? (
-                            <View style={styles.pickerLoading}>
-                                <ActivityIndicator size="large" color="#52B28B" />
-                                <Text style={styles.pickerLoadingText}>Carregando turmas...</Text>
-                            </View>
-                        ) : (
-                            <FlatList
-                                data={classrooms}
-                                keyExtractor={(item) => String(item.id)}
-                                renderItem={({ item }) => (
-                                    <Pressable
-                                        style={styles.pickerOption}
-                                        onPress={() => handleSelectClassroom(item.id, item.name)}
-                                    >
-                                        <Text style={styles.pickerOptionText}>{item.name}</Text>
-                                    </Pressable>
-                                )}
-                                onEndReached={() => {
-                                    if (hasNextClassroomsPage && !isFetchingNextClassroomsPage) {
-                                        fetchNextClassroomsPage();
-                                    }
-                                }}
-                                onEndReachedThreshold={0.5}
-                                ListFooterComponent={() => 
-                                    isFetchingNextClassroomsPage ? (
-                                        <ActivityIndicator size="small" color="#52B28B" style={{ padding: 10 }} />
-                                    ) : null
-                                }
-                                ListEmptyComponent={() => (
-                                    <View style={{ alignItems: "center", paddingVertical: 20 }}>
-                                        <Text style={styles.pickerEmptyText}>Nenhuma turma encontrada.</Text>
-                                    </View>
-                                )}
-                            />
-                        )}
-                        
-                        <Pressable 
-                            style={styles.pickerCloseButton} 
-                            onPress={() => setClassroomModalVisible(false)}
-                        >
-                            <Text style={styles.pickerCloseButtonText}>Fechar</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </Modal>
-
-            {/* Professor Picker Modal */}
-            <Modal
-                visible={professorModalVisible}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setProfessorModalVisible(false)}
-            >
-                <View style={styles.pickerBackdrop}>
-                    <View style={styles.pickerModal}>
-                        <Text style={styles.pickerTitle}>Selecione o Professor</Text>
-                        
-                        <View style={styles.pickerSearchContainer}>
-                            <Ionicons name="search" size={16} color="#9ca3af" />
-                            <TextInput
-                                style={styles.pickerSearchInput}
-                                value={professorSearch}
-                                onChangeText={setProfessorSearch}
-                                placeholder="Buscar professor por nome..."
-                                placeholderTextColor="#9ca3af"
-                                autoCorrect={false}
-                            />
-                        </View>
-
-                        {isLoadingProfessors && professors.length === 0 ? (
-                            <View style={styles.pickerLoading}>
-                                <ActivityIndicator size="large" color="#52B28B" />
-                                <Text style={styles.pickerLoadingText}>Carregando professores...</Text>
-                            </View>
-                        ) : (
-                            <FlatList
-                                data={professors}
-                                keyExtractor={(item) => String(item.id_professor)}
-                                renderItem={({ item }) => (
-                                    <Pressable
-                                        style={styles.pickerOption}
-                                        onPress={() => handleSelectProfessor(item.id_professor, item.name)}
-                                    >
-                                        <Text style={styles.pickerOptionText}>{item.name}</Text>
-                                    </Pressable>
-                                )}
-                                onEndReached={() => {
-                                    if (hasNextProfessorsPage && !isFetchingNextProfessorsPage) {
-                                        fetchNextProfessorsPage();
-                                    }
-                                }}
-                                onEndReachedThreshold={0.5}
-                                ListFooterComponent={() => 
-                                    isFetchingNextProfessorsPage ? (
-                                        <ActivityIndicator size="small" color="#52B28B" style={{ padding: 10 }} />
-                                    ) : null
-                                }
-                                ListEmptyComponent={() => (
-                                    <View style={{ alignItems: "center", paddingVertical: 20 }}>
-                                        <Text style={styles.pickerEmptyText}>Nenhum professor encontrado.</Text>
-                                    </View>
-                                )}
-                            />
-                        )}
-                        
-                        <Pressable 
-                            style={styles.pickerCloseButton} 
-                            onPress={() => setProfessorModalVisible(false)}
-                        >
-                            <Text style={styles.pickerCloseButtonText}>Fechar</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </Modal>
+             </View>
         </KeyboardAvoidingView>
     );
 };

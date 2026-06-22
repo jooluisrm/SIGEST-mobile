@@ -41,8 +41,6 @@ export default function CadastroDisciplina() {
             area_conhecimento: dados.area_conhecimento,
             carga_horaria: dados.carga_horaria,
             ementa: dados.ementa,
-            classroom_id: dados.classroom_id,
-            professor_id: dados.professor_id,
             status: dados.status,
         };
 

@@ -13,8 +13,6 @@ import { SearchAddHeader } from "@/components/gerenciar/search-add-header";
 import { DisciplinaCard } from "@/components/gerenciar/disciplina/disciplina-card";
 import { Ionicons } from "@expo/vector-icons";
 import { useDisciplinasInfiniteQuery } from "@/api/disciplina";
-import { useClassroomsInfiniteQuery } from "@/api/turma";
-import { useProfessorsInfiniteQuery } from "@/api/professor";
 
 export default function GerenciarDisciplinas() {
     const router = useRouter();
@@ -41,44 +39,7 @@ export default function GerenciarDisciplinas() {
         isRefetching
     } = useDisciplinasInfiniteQuery(debouncedSearchText);
 
-    // Queries to resolve IDs to names
-    const { data: classroomsResponse } = useClassroomsInfiniteQuery("");
-    const { data: professorsResponse } = useProfessorsInfiniteQuery("");
 
-    // Flatten lookup lists
-    const classrooms = useMemo(() => {
-        if (!classroomsResponse?.pages) return [];
-        return classroomsResponse.pages.flatMap((page) => {
-            if (!page || !page.data) return [];
-            if (Array.isArray(page.data)) return page.data;
-            if (typeof page.data === "object" && "data" in page.data && Array.isArray(page.data.data)) {
-                return page.data.data;
-            }
-            return [];
-        });
-    }, [classroomsResponse]);
-
-    const professors = useMemo(() => {
-        if (!professorsResponse?.pages) return [];
-        return professorsResponse.pages.flatMap((page) => {
-            if (!page || !page.data) return [];
-            if (Array.isArray(page.data)) return page.data;
-            return [];
-        });
-    }, [professorsResponse]);
-
-    // Create maps for name resolution
-    const classroomMap = useMemo(() => {
-        const map = new Map<number, string>();
-        classrooms.forEach((c) => map.set(c.id, c.name));
-        return map;
-    }, [classrooms]);
-
-    const professorMap = useMemo(() => {
-        const map = new Map<number, string>();
-        professors.forEach((p) => map.set(p.id_professor, p.name));
-        return map;
-    }, [professors]);
 
     // Flatten disciplines list safely handling different potential envelope structures
     const disciplinas = useMemo(() => {
@@ -139,8 +100,6 @@ export default function GerenciarDisciplinas() {
                             name={item.name}
                             areaConhecimento={item.area_conhecimento}
                             cargaHoraria={item.carga_horaria}
-                            classroomName={classroomMap.get(item.classroom_id) || `Turma #${item.classroom_id}`}
-                            professorName={professorMap.get(item.professor_id) || `Professor #${item.professor_id}`}
                             status={item.status}
                             onPress={() => handleCardPress(item.id)}
                         />

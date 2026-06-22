@@ -26,7 +26,7 @@ export default function DetalheTurma() {
     const classroom = responseData?.data;
 
     // Fetch corresponding series (Period) details
-    const { data: periodResponse } = usePeriodQuery(classroom?.period_id || "");
+    const { data: periodResponse } = usePeriodQuery(classroom?.serie_id || "");
     const periodName = periodResponse?.data?.name || "Carregando série...";
 
     useEffect(() => {

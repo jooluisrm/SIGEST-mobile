@@ -12,8 +12,6 @@ export const cadastroDisciplinaSchema = z.object({
   ementa: z.string()
     .min(1, "A ementa é obrigatória")
     .max(500, "A ementa deve ter no máximo 500 caracteres"),
-  classroom_id: z.number().int().min(1, "Selecione uma turma"),
-  professor_id: z.number().int().min(1, "Selecione um professor"),
   status: z.boolean(),
 });
 

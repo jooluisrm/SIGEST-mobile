@@ -21,7 +21,8 @@ export interface MatrizDisciplina {
   status: boolean | number;
   classroom_id: number | null;
   professor_id: number | null;
-  period_id: number;
+  period_id?: number;
+  serie_id?: number;
 }
 
 /**

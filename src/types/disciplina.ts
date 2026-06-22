@@ -7,8 +7,8 @@ export interface Disciplina {
   area_conhecimento: string;
   carga_horaria: string;
   ementa: string;
-  classroom_id: number;
-  professor_id: number;
+  classroom_id?: number;
+  professor_id?: number;
   status: boolean | number;
 }
 
@@ -86,8 +86,8 @@ export interface CreateDisciplinaRequest {
   area_conhecimento: string;
   carga_horaria: string;
   ementa: string;
-  classroom_id: number;
-  professor_id: number;
+  classroom_id?: number;
+  professor_id?: number;
   status: boolean;
 }
 

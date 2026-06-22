@@ -290,7 +290,6 @@ export const CadastroFormPerson = ({
             // Specific validation
             if (tipo === "aluno") {
                 if (!formData.matricula.trim()) return "Matrícula é obrigatória.";
-                if (!formData.turma.trim()) return "Turma é obrigatória.";
             } else if (tipo === "professor") {
                 if (!formData.matriculaAdpm.trim()) return "Matrícula ADPM é obrigatória.";
                 if (!formData.codigoDisciplina.trim()) return "Código da Disciplina é obrigatório.";
@@ -451,8 +450,6 @@ export const CadastroFormPerson = ({
         if (tipo === "aluno") {
             fields.push(
                 { label: "Matrícula", key: "matricula", placeholder: "Ex: 123456", keyboardType: "numeric" },
-                { label: "Período", key: "periodo", placeholder: "Selecione o período", options: ["1º Ano", "2º Ano", "3º Ano", "4º Ano"] },
-                { label: "Turma", key: "turma", placeholder: "Selecione a turma", options: ["Turma A", "Turma B", "Turma C"] },
                 { label: "Status", key: "status", placeholder: "Ativo", options: ["Ativo", "Inativo"] }
             );
         } else if (tipo === "professor") {

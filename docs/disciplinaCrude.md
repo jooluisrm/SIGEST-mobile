@@ -24,8 +24,6 @@ Todas as rotas de gerenciamento de disciplinas exigem autenticação do usuário
         "area_conhecimento": "Exatas",
         "carga_horaria": "120h",
         "ementa": "Ementa...",
-        "classroom_id": 1,
-        "professor_id": 2,
         "status": 1
       }
     ],
@@ -71,8 +69,6 @@ Os inputs do formulário de criação/edição devem seguir as regras de valida�
 * **`area_conhecimento` (Área de Conhecimento):** Obrigatório, string de até 35 caracteres.
 * **`carga_horaria` (Carga Horária):** Obrigatório, string (ex: `"80h"`, `"120 horas"`).
 * **`ementa` (Ementa):** Obrigatório, string de até 500 caracteres.
-* **`classroom_id` (Turma):** Inteiro positivo obrigatório (ID da Turma vinculada).
-* **`professor_id` (Professor):** Inteiro positivo obrigatório (ID do Professor vinculado).
 * **`status` (Situação):** Booleano (ativo/inativo).
 
 ---
@@ -85,7 +81,6 @@ O backend do Laravel valida e retorna falhas estruturadas sob a chave `mensagem`
   "status" : false,
   "code" : 422,
   "mensagem" : {
-    "classroom_id" : ["O campo sala de aula é inválido."],
     "name" : ["O campo nome deve ter pelo menos 3 caracteres."]
   }
 }
@@ -110,10 +105,10 @@ O frontend mapeia estes erros e exibe-os sob os respectivos inputs no formulári
   * `useDeleteDisciplinaMutation`: Exclui disciplina.
 
 ### C. Componentes de UI
-* **`disciplina-card.tsx`** (`src/components/gerenciar/disciplina/disciplina-card.tsx`): Exibe o nome da disciplina, área de conhecimento, carga horária, professor e turma vinculados.
-* **`disciplina-form.tsx`** (`src/components/gerenciar/disciplina/disciplina-form.tsx`): Formulário controlado por React Hook Form contendo seletores modais para Turmas e Professores, e inputs para carga horária, nome e ementa.
+* **`disciplina-card.tsx`** (`src/components/gerenciar/disciplina/disciplina-card.tsx`): Exibe o nome da disciplina, área de conhecimento, carga horária, status, e opcionalmente professor/turma se fornecidos.
+* **`disciplina-form.tsx`** (`src/components/gerenciar/disciplina/disciplina-form.tsx`): Formulário controlado por React Hook Form contendo inputs para carga horária, nome, ementa e status.
 
 ### D. Telas de Rotas (Expo Router)
 * **`disciplina/index.tsx`** (`app/(private)/gerenciar/disciplina/index.tsx`): Listagem das disciplinas com scroll infinito e busca por texto.
 * **`disciplina/cadastro.tsx`** (`app/(private)/gerenciar/disciplina/cadastro.tsx`): Tela container para o formulário de cadastro e edição.
-* **`disciplina/[id].tsx`** (`app/(private)/gerenciar/disciplina/[id].tsx`): Detalhes da disciplina (exibindo ementa completa, turma, professor, carga horária e botões de editar e excluir).
+* **`disciplina/[id].tsx`** (`app/(private)/gerenciar/disciplina/[id].tsx`): Detalhes da disciplina (exibindo ementa completa, carga horária, status e botões de editar e excluir).

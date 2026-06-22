@@ -25,43 +25,7 @@ function formatDateISOToBR(dateStr: string): string {
     return dateStr;
 }
 
-function mapPeriodToId(period: string): number | null {
-    switch (period) {
-        case "1º Ano": return 1;
-        case "2º Ano": return 2;
-        case "3º Ano": return 3;
-        case "4º Ano": return 4;
-        default: return null;
-    }
-}
 
-function mapPeriodIdToName(periodId: number | null): string {
-    switch (periodId) {
-        case 1: return "1º Ano";
-        case 2: return "2º Ano";
-        case 3: return "3º Ano";
-        case 4: return "4º Ano";
-        default: return "";
-    }
-}
-
-function mapTurmaToId(turma: string): number | null {
-    switch (turma) {
-        case "Turma A": return 1;
-        case "Turma B": return 2;
-        case "Turma C": return 3;
-        default: return null;
-    }
-}
-
-function mapTurmaIdToName(classroomId: number | null): string {
-    switch (classroomId) {
-        case 1: return "Turma A";
-        case 2: return "Turma B";
-        case 3: return "Turma C";
-        default: return "";
-    }
-}
 
 function mapAlunoToForm(aluno: any): any {
     return {
@@ -84,8 +48,6 @@ function mapAlunoToForm(aluno: any): any {
         estado: aluno.estado || "",
         cidade: aluno.cidade || "",
         matricula: aluno.matricula || "",
-        periodo: mapPeriodIdToName(aluno.period_id),
-        turma: mapTurmaIdToName(aluno.classroom_id),
         status: aluno.status ? "Ativo" : "Inativo",
     };
 }
@@ -146,8 +108,6 @@ export default function CadastroAluno() {
             email: dados.email,
             matricula: dados.matricula,
             status: dados.status === "Ativo", // Map Active/Inactive string to Boolean
-            period_id: mapPeriodToId(dados.periodo),
-            classroom_id: mapTurmaToId(dados.turma),
         };
 
         try {
