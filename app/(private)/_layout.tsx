@@ -60,6 +60,16 @@ export default function PrivateLayout() {
                     headerShown: false,
                 }}
             />
+            
+            {/* Oculta as telas de frequencia das abas inferiores */}
+            <Tabs.Screen
+                name="frequencia"
+                options={{
+                    href: null,
+                    headerShown: false,
+                }}
+            />
         </Tabs>
     );
 }
+

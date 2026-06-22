@@ -30,6 +30,7 @@ export default function Home() {
                 <ButtonMenu
                     title="Frequência"
                     iconSource={require("../../assets/notas-frequencia-icon.png")}
+                    onPress={() => router.push("/frequencia" as any)}
                 />
                 <ButtonMenu
                     title="Relatórios"

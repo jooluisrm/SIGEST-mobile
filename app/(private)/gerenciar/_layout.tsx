@@ -197,7 +197,18 @@ export default function GerenciarLayout() {
                     title: "Gerenciar Avaliações",
                 }}
             />
-
+            <Stack.Screen
+                name="avaliacao/cadastro"
+                options={{
+                    title: "Cadastrar Avaliação",
+                }}
+            />
+            <Stack.Screen
+                name="avaliacao/[id]"
+                options={{
+                    title: "Lançamento de Notas",
+                }}
+            />
         </Stack>
     );
 }
