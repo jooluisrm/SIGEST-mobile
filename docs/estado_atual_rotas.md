@@ -264,3 +264,48 @@ Essas duas entidades compartilham uma tabela base comum de dados cadastrais (`us
 
 ### Formato de Erro de Validação:
 * **Tipo:** `ApiResquest` -> Retorna chave `"mensagem"`.
+
+---
+
+## 11. Oferta de Disciplina (`OfertaDisciplina`)
+* **Controller:** [OfertaDisciplinaController.php](file:///c:/Users/joaol/Documents/SIGEST-backend/app/Http/Controllers/OfertaDisciplinaController.php)
+* **Permissão:** Role `servidor|admin`
+
+### Rotas Disponíveis:
+| Método | Rota | Descrição |
+| :--- | :--- | :--- |
+| `GET` | `/api/oferta-disciplinas` | Lista ofertas paginadas (10 por página) |
+| `POST` | `/api/oferta-disciplinas` | Cria uma nova oferta de disciplina |
+| `GET` | `/api/oferta-disciplinas/{id}` | Busca detalhes de uma oferta específica |
+| `PUT/PATCH` | `/api/oferta-disciplinas/{id}` | Atualiza uma oferta por ID |
+| `DELETE` | `/api/oferta-disciplinas/{id}` | Remove uma oferta por ID |
+| `GET` | `/api/oferta-disciplinas/disciplina/{disciplinaId}` | Lista ofertas de uma disciplina específica |
+| `GET` | `/api/oferta-disciplinas/turma/{classroomId}` | Lista ofertas de uma turma específica |
+
+### Regras de Validação (Request Body - `StoreOfertaDisciplinaRequest`):
+* `disciplina_id` (integer, obrigatório, deve existir na tabela `disciplinas`).
+* `classroom_id` (integer, obrigatório, deve existir na tabela `classrooms`).
+* `professor_id` (integer, obrigatório, deve existir na tabela `professors`).
+* `periodo_letivo_id` (integer, obrigatório, deve existir na tabela `periodo_letivos`).
+* `status` (boolean, opcional).
+
+---
+
+## 12. Matrícula em Disciplina (`MatriculaDisciplina`)
+* **Controller:** [MatriculaDisciplinaController.php](file:///c:/Users/joaol/Documents/SIGEST-backend/app/Http/Controllers/MatriculaDisciplinaController.php)
+* **Permissão:** Role `servidor|admin`
+
+### Rotas Disponíveis:
+| Método | Rota | Descrição |
+| :--- | :--- | :--- |
+| `GET` | `/api/matricula-disciplinas` | Lista todos os vínculos paginados |
+| `POST` | `/api/matricula-disciplinas` | Enturma um aluno (vincula matrícula à oferta) |
+| `GET` | `/api/matricula-disciplinas/{id}` | Detalhes do vínculo |
+| `DELETE` | `/api/matricula-disciplinas/{id}` | Desenturma o aluno (remove vínculo) |
+| `GET` | `/api/matricula-disciplinas/matricula/{matriculaId}` | Lista disciplinas vinculadas à matrícula |
+| `GET` | `/api/matricula-disciplinas/oferta/{ofertaId}` | Lista alunos vinculados à oferta |
+
+### Regras de Validação (Request Body - `StoreMatriculaDisciplinaRequest`):
+* `matricula_id` (integer, obrigatório, deve existir na tabela `matriculas`).
+* `oferta_disciplina_id` (integer, obrigatório, deve existir na tabela `oferta_disciplinas` e ser única para esta matrícula).
+

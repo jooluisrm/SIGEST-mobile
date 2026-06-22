@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
     StyleSheet, 
     View, 
@@ -9,16 +9,39 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SearchAddHeader } from "@/components/gerenciar/search-add-header";
-import { UsuarioCard } from "@/components/gerenciar/usuario/usuario-card";
+import { MatriculaCard } from "@/components/gerenciar/matricula/matricula-card";
+import { useAlunoQuery } from "@/api/aluno";
+import { usePeriodQuery } from "@/api/periodo";
 import { Ionicons } from "@expo/vector-icons";
-import { useUsuariosInfiniteQuery } from "../../../../src/api/usuario";
+import { useMatriculasInfiniteQuery } from "@/api/matricula";
 
-export default function Usuario() {
+// Self-resolving row to avoid modifying the backend.
+// Leverage TanStack Query's cache so repeated IDs resolve instantly.
+const MatriculaRow = ({ item, onPress }: { item: any; onPress: (id: number) => void }) => {
+    const { data: alunoResponse } = useAlunoQuery(item.aluno_id);
+    const { data: periodResponse } = usePeriodQuery(item.serie_id);
+
+    const studentName = alunoResponse?.data?.name || `Aluno ID: ${item.aluno_id}`;
+    const serieName = periodResponse?.data?.name || `Série ID: ${item.serie_id}`;
+
+    return (
+        <MatriculaCard
+            studentName={studentName}
+            codigoMatricula={item.codigo_matricula}
+            serieName={serieName}
+            dataMatricula={item.data_matricula}
+            status={item.status}
+            onPress={() => onPress(item.id)}
+        />
+    );
+};
+
+export default function GerenciarMatriculas() {
     const router = useRouter();
     const [searchText, setSearchText] = useState("");
     const [debouncedSearchText, setDebouncedSearchText] = useState("");
 
-    // Debounce de 500ms na busca para evitar requisições a cada letra digitada
+    // Debounce search text
     useEffect(() => {
         const handler = setTimeout(() => {
             setDebouncedSearchText(searchText);
@@ -26,39 +49,52 @@ export default function Usuario() {
         return () => clearTimeout(handler);
     }, [searchText]);
 
-    // Consulta real usando o TanStack Query com rolagem infinita
     const { 
         data, 
         isLoading, 
         error, 
         fetchNextPage, 
         hasNextPage, 
-        isFetchingNextPage 
-    } = useUsuariosInfiniteQuery(debouncedSearchText);
+        isFetchingNextPage,
+        refetch
+    } = useMatriculasInfiniteQuery(debouncedSearchText);
 
-    // Mapeamento dos resultados recebidos da API (data contém páginas no useInfiniteQuery)
-    const usuarios = data?.pages.flatMap((page) => page.data || []) || [];
+    const matriculas = useMemo(() => {
+        if (!data?.pages) return [];
+        return data.pages.flatMap((page) => {
+            if (!page || !page.data) return [];
+            if (Array.isArray(page.data)) return page.data;
+            if (typeof page.data === "object" && "data" in page.data && Array.isArray(page.data.data)) {
+                return page.data.data;
+            }
+            return [];
+        });
+    }, [data]);
 
     useEffect(() => {
         if (error) {
-            console.error("Erro ao carregar servidores:", error);
+            console.error("Erro ao carregar matrículas:", error);
             Alert.alert(
                 "Erro de Conexão", 
-                "Não foi possível buscar a lista de servidores. Verifique a conexão com a API."
+                "Não foi possível buscar a lista de matrículas. Verifique a conexão com o servidor."
             );
         }
     }, [error]);
+
+    useEffect(() => {
+        refetch();
+    }, []);
 
     const handleSearchChange = (text: string) => {
         setSearchText(text);
     };
 
     const handleAddPress = () => {
-        router.push("/gerenciar/usuario/cadastro");
+        router.push("/gerenciar/matricula/cadastro");
     };
 
     const handleCardPress = (id: number) => {
-        router.push(`/gerenciar/usuario/${id}` as any);
+        router.push(`/gerenciar/matricula/${id}` as any);
     };
 
     const handleLoadMore = () => {
@@ -69,37 +105,32 @@ export default function Usuario() {
 
     return (
         <View style={styles.container}>
-            {/* Header com busca e botão de adicionar */}
             <SearchAddHeader
                 value={searchText}
                 onChangeText={handleSearchChange}
-                placeholder="Buscar por nome ou CPF"
+                placeholder="Buscar por código de matrícula"
                 onAddPress={handleAddPress}
             />
 
-            {/* Aviso visual caso o termo de busca seja muito curto */}
             {searchText.trim().length > 0 && searchText.trim().length < 3 && (
                 <Text style={styles.searchHelperText}>
                     Digite pelo menos 3 caracteres para buscar.
                 </Text>
             )}
 
-            {isLoading && usuarios.length === 0 ? (
+            {isLoading && matriculas.length === 0 ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#52B28B" />
-                    <Text style={styles.loadingText}>Carregando servidores...</Text>
+                    <Text style={styles.loadingText}>Carregando matrículas...</Text>
                 </View>
             ) : (
-                /* Lista de usuários vindos da API com Rolagem Infinita */
                 <FlatList
-                    data={usuarios}
-                    keyExtractor={(item) => String(item.id_servidor)}
+                    data={matriculas}
+                    keyExtractor={(item) => String(item.id)}
                     renderItem={({ item }) => (
-                        <UsuarioCard
-                            name={item.name}
-                            email={item.email}
-                            phone={item.celular || item.telefone || "Não cadastrado"}
-                            onPress={() => handleCardPress(item.id_servidor)}
+                        <MatriculaRow
+                            item={item}
+                            onPress={handleCardPress}
                         />
                     )}
                     contentContainerStyle={styles.listContent}
@@ -116,7 +147,7 @@ export default function Usuario() {
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
                             <Ionicons name="search-outline" size={48} color="#9ca3af" />
-                            <Text style={styles.emptyText}>Nenhum usuário encontrado</Text>
+                            <Text style={styles.emptyText}>Nenhuma matrícula encontrada</Text>
                         </View>
                     }
                 />
@@ -133,7 +164,7 @@ const styles = StyleSheet.create({
         paddingTop: 16,
     },
     listContent: {
-        paddingBottom: 20,
+        paddingBottom: 40,
         flexGrow: 1,
     },
     emptyContainer: {

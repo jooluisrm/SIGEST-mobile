@@ -1,64 +1,81 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { 
     StyleSheet, 
     View, 
     FlatList, 
     Text, 
     Alert,
-    ActivityIndicator
+    ActivityIndicator,
+    Pressable
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SearchAddHeader } from "@/components/gerenciar/search-add-header";
-import { UsuarioCard } from "@/components/gerenciar/usuario/usuario-card";
+import { OfertaDisciplinaCard } from "@/components/gerenciar/ofertadisciplina/ofertadisciplina-card";
 import { Ionicons } from "@expo/vector-icons";
-import { useUsuariosInfiniteQuery } from "../../../../src/api/usuario";
+import { useOfertaDisciplinasInfiniteQuery } from "@/api/ofertadisciplina";
 
-export default function Usuario() {
+export default function GerenciarOfertas() {
     const router = useRouter();
     const [searchText, setSearchText] = useState("");
     const [debouncedSearchText, setDebouncedSearchText] = useState("");
 
-    // Debounce de 500ms na busca para evitar requisições a cada letra digitada
+    // Debounce search text
     useEffect(() => {
         const handler = setTimeout(() => {
             setDebouncedSearchText(searchText);
-        }, 500);
+        }, 300);
         return () => clearTimeout(handler);
     }, [searchText]);
 
-    // Consulta real usando o TanStack Query com rolagem infinita
     const { 
         data, 
         isLoading, 
         error, 
         fetchNextPage, 
         hasNextPage, 
-        isFetchingNextPage 
-    } = useUsuariosInfiniteQuery(debouncedSearchText);
+        isFetchingNextPage,
+        refetch
+    } = useOfertaDisciplinasInfiniteQuery();
 
-    // Mapeamento dos resultados recebidos da API (data contém páginas no useInfiniteQuery)
-    const usuarios = data?.pages.flatMap((page) => page.data || []) || [];
+    const offerings = useMemo(() => {
+        if (!data?.pages) return [];
+        return data.pages.flatMap((page) => {
+            if (!page || !page.data) return [];
+            return page.data;
+        });
+    }, [data]);
+
+    const filteredOfferings = useMemo(() => {
+        const query = debouncedSearchText.trim().toLowerCase();
+        if (!query) return offerings;
+        return offerings.filter(o => 
+            (o.disciplina?.name || "").toLowerCase().includes(query) ||
+            (o.classroom?.name || "").toLowerCase().includes(query) ||
+            (o.professor?.name || "").toLowerCase().includes(query)
+        );
+    }, [offerings, debouncedSearchText]);
 
     useEffect(() => {
         if (error) {
-            console.error("Erro ao carregar servidores:", error);
+            console.error("Erro ao carregar ofertas:", error);
             Alert.alert(
                 "Erro de Conexão", 
-                "Não foi possível buscar a lista de servidores. Verifique a conexão com a API."
+                "Não foi possível buscar a lista de ofertas de disciplina. Verifique a conexão com o servidor."
             );
         }
     }, [error]);
 
-    const handleSearchChange = (text: string) => {
-        setSearchText(text);
-    };
+    useEffect(() => {
+        // Automatically refetch when screen gets focus to ensure we have fresh data
+        refetch();
+    }, []);
 
     const handleAddPress = () => {
-        router.push("/gerenciar/usuario/cadastro");
+        router.push("/gerenciar/ofertadisciplina/cadastro");
     };
 
     const handleCardPress = (id: number) => {
-        router.push(`/gerenciar/usuario/${id}` as any);
+        router.push(`/gerenciar/ofertadisciplina/${id}` as any);
     };
 
     const handleLoadMore = () => {
@@ -69,37 +86,30 @@ export default function Usuario() {
 
     return (
         <View style={styles.container}>
-            {/* Header com busca e botão de adicionar */}
             <SearchAddHeader
                 value={searchText}
-                onChangeText={handleSearchChange}
-                placeholder="Buscar por nome ou CPF"
+                onChangeText={setSearchText}
+                placeholder="Buscar por disciplina ou turma..."
                 onAddPress={handleAddPress}
             />
 
-            {/* Aviso visual caso o termo de busca seja muito curto */}
-            {searchText.trim().length > 0 && searchText.trim().length < 3 && (
-                <Text style={styles.searchHelperText}>
-                    Digite pelo menos 3 caracteres para buscar.
-                </Text>
-            )}
-
-            {isLoading && usuarios.length === 0 ? (
+            {isLoading && offerings.length === 0 ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#52B28B" />
-                    <Text style={styles.loadingText}>Carregando servidores...</Text>
+                    <Text style={styles.loadingText}>Carregando ofertas...</Text>
                 </View>
             ) : (
-                /* Lista de usuários vindos da API com Rolagem Infinita */
                 <FlatList
-                    data={usuarios}
-                    keyExtractor={(item) => String(item.id_servidor)}
+                    data={filteredOfferings}
+                    keyExtractor={(item) => String(item.id)}
                     renderItem={({ item }) => (
-                        <UsuarioCard
-                            name={item.name}
-                            email={item.email}
-                            phone={item.celular || item.telefone || "Não cadastrado"}
-                            onPress={() => handleCardPress(item.id_servidor)}
+                        <OfertaDisciplinaCard
+                            disciplineName={item.disciplina?.name || `Disciplina ID: ${item.id}`}
+                            classroomName={item.classroom?.name || "Sem Turma"}
+                            professorName={item.professor?.name || "Sem Professor"}
+                            periodoLetivoName={item.periodo_letivo?.name || "Sem Período Letivo"}
+                            status={item.status}
+                            onPress={() => handleCardPress(item.id)}
                         />
                     )}
                     contentContainerStyle={styles.listContent}
@@ -116,7 +126,7 @@ export default function Usuario() {
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
                             <Ionicons name="search-outline" size={48} color="#9ca3af" />
-                            <Text style={styles.emptyText}>Nenhum usuário encontrado</Text>
+                            <Text style={styles.emptyText}>Nenhuma oferta cadastrada</Text>
                         </View>
                     }
                 />
@@ -133,7 +143,7 @@ const styles = StyleSheet.create({
         paddingTop: 16,
     },
     listContent: {
-        paddingBottom: 20,
+        paddingBottom: 40,
         flexGrow: 1,
     },
     emptyContainer: {
@@ -159,13 +169,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: "#6b7280",
         fontWeight: "500",
-    },
-    searchHelperText: {
-        fontSize: 12,
-        color: "#6b7280",
-        fontStyle: "italic",
-        marginBottom: 8,
-        marginLeft: 4,
     },
     footerLoading: {
         paddingVertical: 16,

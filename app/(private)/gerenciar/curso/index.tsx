@@ -84,7 +84,7 @@ export default function GerenciarCurso() {
                 </Text>
             )}
 
-            {isLoading ? (
+            {isLoading && courses.length === 0 ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#52B28B" />
                     <Text style={styles.loadingText}>Carregando cursos...</Text>

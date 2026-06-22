@@ -84,7 +84,7 @@ export default function Professor() {
                 </Text>
             )}
 
-            {isLoading ? (
+            {isLoading && professors.length === 0 ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#52B28B" />
                     <Text style={styles.loadingText}>Carregando professores...</Text>

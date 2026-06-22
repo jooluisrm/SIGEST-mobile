@@ -180,7 +180,7 @@ export default function GerenciarTurmas() {
                 </Text>
             )}
 
-            {isLoading ? (
+            {isLoading && classrooms.length === 0 ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#52B28B" />
                     <Text style={styles.loadingText}>Carregando turmas...</Text>

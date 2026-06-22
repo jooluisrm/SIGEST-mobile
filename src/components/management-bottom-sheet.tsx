@@ -32,6 +32,8 @@ const OPTIONS: Option[] = [
     { id: "periodoletivo", title: "Período Letivo", icon: "calendar-outline" },
     { id: "disciplina", title: "Disciplina", icon: "book-outline" },
     { id: "turma", title: "Turma", icon: "school-outline" },
+    { id: "ofertadisciplina", title: "Ofertas", icon: "briefcase-outline" },
+    { id: "matricula", title: "Matrículas", icon: "clipboard-outline" },
     { id: "avaliacao", title: "Avaliação", icon: "book-outline" },
 ];
 

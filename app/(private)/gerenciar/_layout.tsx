@@ -156,6 +156,42 @@ export default function GerenciarLayout() {
                 }}
             />
             <Stack.Screen
+                name="ofertadisciplina/index"
+                options={{
+                    title: "Gerenciar Ofertas",
+                }}
+            />
+            <Stack.Screen
+                name="ofertadisciplina/cadastro"
+                options={{
+                    title: "Cadastrar Oferta",
+                }}
+            />
+            <Stack.Screen
+                name="ofertadisciplina/[id]"
+                options={{
+                    title: "Detalhes da Oferta",
+                }}
+            />
+            <Stack.Screen
+                name="matricula/index"
+                options={{
+                    title: "Gerenciar Matrículas",
+                }}
+            />
+            <Stack.Screen
+                name="matricula/cadastro"
+                options={{
+                    title: "Cadastrar Matrícula",
+                }}
+            />
+            <Stack.Screen
+                name="matricula/[id]"
+                options={{
+                    title: "Detalhes da Matrícula",
+                }}
+            />
+            <Stack.Screen
                 name="avaliacao/index"
                 options={{
                     title: "Gerenciar Avaliações",

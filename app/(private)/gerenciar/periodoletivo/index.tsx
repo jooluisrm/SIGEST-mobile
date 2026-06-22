@@ -99,7 +99,7 @@ export default function PeriodosLetivosIndex() {
                 </Text>
             )}
 
-            {isLoading ? (
+            {isLoading && periodosLetivos.length === 0 ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#52B28B" />
                     <Text style={styles.loadingText}>Carregando períodos letivos...</Text>
