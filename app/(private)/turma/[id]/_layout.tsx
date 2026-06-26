@@ -4,6 +4,7 @@ import { Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOfertaDisciplinaQuery } from "@/api/ofertadisciplina";
+import { TurmaContext } from "./context";
 
 export default function TurmaLayout() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -15,6 +16,7 @@ export default function TurmaLayout() {
     const classroomName = response?.data?.classroom?.name ? ` - ${response.data.classroom.name}` : "";
 
     return (
+        <TurmaContext.Provider value={{ id }}>
         <Tabs
             screenOptions={({ route }) => ({
                 tabBarActiveTintColor: "#52B28B",
@@ -101,5 +103,6 @@ export default function TurmaLayout() {
                 }}
             />
         </Tabs>
+        </TurmaContext.Provider>
     );
 }

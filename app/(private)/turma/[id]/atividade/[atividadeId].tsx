@@ -14,7 +14,7 @@ import {
     KeyboardAvoidingView,
     Keyboard
 } from "react-native";
-import { useGlobalSearchParams, useRouter, useNavigation } from "expo-router";
+import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,9 +27,11 @@ import { useNotasAtividadeQuery, createNotaAtividade, updateNotaAtividade } from
 import { GradeStudentRow } from "@/components/gerenciar/grade-student-row";
 import { cadastroAtividadeSchema, CadastroAtividadeData } from "@/schema/cadastro-atividade";
 import { NotaAtividade } from "@/types/nota";
+import { useTurmaId } from "../context";
 
 export default function AtividadeDetalhesScreen() {
-    const { id: idParam, atividadeId: atividadeIdParam } = useGlobalSearchParams<{ id: string; atividadeId: string }>();
+    const idParam = useTurmaId();
+    const { atividadeId: atividadeIdParam } = useLocalSearchParams<{ atividadeId: string }>();
     const router = useRouter();
     const navigation = useNavigation();
     const queryClient = useQueryClient();

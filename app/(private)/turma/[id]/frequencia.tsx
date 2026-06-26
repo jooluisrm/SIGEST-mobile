@@ -11,7 +11,7 @@ import {
     TextInput,
     Dimensions
 } from "react-native";
-import { useGlobalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -20,11 +20,12 @@ import { createFrequencia, updateFrequencia } from "@/api/frequencia";
 import { StudentAttendanceRow } from "@/components/gerenciar/frequencia-student-row";
 import { useOfertaDisciplinaQuery } from "@/api/ofertadisciplina";
 import { Frequencia } from "@/types/frequencia";
+import { useTurmaId } from "./context";
 
 const { height } = Dimensions.get("window");
 
 export default function TurmaFrequenciaScreen() {
-    const { id } = useGlobalSearchParams<{ id: string }>();
+    const id = useTurmaId();
     const queryClient = useQueryClient();
     const ofertaId = Number(id);
 

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { StyleSheet, Text, View, FlatList, Pressable, ActivityIndicator, Modal, TextInput, Alert, ScrollView, Platform } from "react-native";
-import { useGlobalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,9 +8,10 @@ import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/dat
 
 import { useAtividadesQuery, useCreateAtividadeMutation } from "@/api/atividade";
 import { cadastroAtividadeSchema, CadastroAtividadeData } from "@/schema/cadastro-atividade";
+import { useTurmaId } from "./context";
 
 export default function AtividadesScreen() {
-    const { id } = useGlobalSearchParams<{ id: string }>();
+    const id = useTurmaId();
     const router = useRouter();
     const ofertaId = Number(id);
 

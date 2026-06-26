@@ -1,12 +1,13 @@
 import React, { useMemo } from "react";
 import { StyleSheet, Text, View, FlatList, ActivityIndicator } from "react-native";
-import { useGlobalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useOfertaDisciplinaQuery } from "@/api/ofertadisciplina";
 import { useMatriculaDisciplinasByOfertaQuery } from "@/api/matriculadisciplina";
+import { useTurmaId } from "./context";
 
 export default function TurmaInfoScreen() {
-    const { id } = useGlobalSearchParams<{ id: string }>();
+    const id = useTurmaId();
 
     const { data: offeringResponse, isLoading: isLoadingOffering } = useOfertaDisciplinaQuery(id);
     const offering = useMemo(() => {
