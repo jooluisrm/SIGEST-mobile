@@ -112,3 +112,56 @@ export function useDeleteOfertaDisciplinaMutation() {
     },
   });
 }
+
+export async function getOfertasByProfessor(userId: number) {
+  const { data: firstPageData } = await api.get<any>(`/oferta-disciplinas`, {
+    params: { page: 1 },
+  });
+
+  let allOfertas: any[] = [];
+  if (firstPageData && Array.isArray(firstPageData.data)) {
+    allOfertas = [...firstPageData.data];
+  } else if (firstPageData?.data && Array.isArray(firstPageData.data.data)) {
+    allOfertas = [...firstPageData.data.data];
+  }
+
+  const meta = firstPageData?.meta || firstPageData?.data?.meta;
+  const lastPage = meta?.last_page || 1;
+
+  if (lastPage > 1) {
+    const promises = [];
+    for (let page = 2; page <= lastPage; page++) {
+      promises.push(
+        api.get<any>(`/oferta-disciplinas`, { params: { page } })
+      );
+    }
+
+    const responses = await Promise.all(promises);
+    responses.forEach(({ data: pageData }) => {
+      if (pageData && Array.isArray(pageData.data)) {
+        allOfertas.push(...pageData.data);
+      } else if (pageData?.data && Array.isArray(pageData.data.data)) {
+        allOfertas.push(...pageData.data.data);
+      }
+    });
+  }
+
+  const filtered = allOfertas.filter((offering: any) => offering.professor?.id_user === userId);
+
+  return {
+    status: true,
+    code: 200,
+    message: "Ofertas de disciplina do professor encontradas com sucesso",
+    data: filtered,
+  };
+}
+
+export function useProfessorOfertasQuery(userId: number | undefined) {
+  return useQuery({
+    queryKey: ["ofertasDisciplinas", "byProfessor", String(userId)],
+    queryFn: () => getOfertasByProfessor(userId!),
+    enabled: !!userId,
+    staleTime: 1000 * 30,
+  });
+}
+

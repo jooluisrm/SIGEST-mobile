@@ -69,6 +69,15 @@ export default function PrivateLayout() {
                     headerShown: false,
                 }}
             />
+
+            {/* Oculta as telas de turmas/disciplinas do professor das abas inferiores */}
+            <Tabs.Screen
+                name="turma/[id]"
+                options={{
+                    href: null,
+                    headerShown: false,
+                }}
+            />
         </Tabs>
     );
 }

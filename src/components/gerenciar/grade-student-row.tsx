@@ -13,13 +13,15 @@ type Props = {
     value?: GradeState;
     onChangeText: (text: string) => void;
     disabled?: boolean;
+    onFocus?: () => void;
 };
 
 export const GradeStudentRow = ({
     matriculaDisciplina,
     value,
     onChangeText,
-    disabled = false
+    disabled = false,
+    onFocus
 }: Props) => {
     const studentName = matriculaDisciplina.matricula?.aluno?.name || "Aluno Desconhecido";
     const studentMatricula = matriculaDisciplina.matricula?.codigo_matricula || "Sem matrícula";
@@ -55,6 +57,7 @@ export const GradeStudentRow = ({
                         keyboardType="decimal-pad"
                         maxLength={4}
                         editable={!disabled}
+                        onFocus={onFocus}
                     />
                 </View>
                 {hasError && <Text style={styles.errorIndicator}>Inválido</Text>}
