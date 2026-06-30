@@ -161,18 +161,6 @@ export default function GerenciarTurmas() {
                 onAddPress={handleAddPress}
             />
 
-            {/* Quick Action Button for Enturmação Automática */}
-            <Pressable 
-                style={({ pressed }) => [
-                    styles.autoGenerateBtn,
-                    pressed && styles.autoGenerateBtnPressed
-                ]}
-                onPress={() => setGenerateModalVisible(true)}
-            >
-                <Ionicons name="flash-outline" size={18} color="#1D8C43" style={styles.autoGenerateIcon} />
-                <Text style={styles.autoGenerateText}>Enturmação Automática</Text>
-            </Pressable>
-
             {/* Helper search warning */}
             {searchText.trim().length > 0 && searchText.trim().length < 3 && (
                 <Text style={styles.searchHelperText}>

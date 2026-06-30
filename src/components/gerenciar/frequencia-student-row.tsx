@@ -45,6 +45,12 @@ export const StudentAttendanceRow = ({
         return [];
     }, [freqData]);
 
+    const attendancePercentage = useMemo(() => {
+        if (frequenciesList.length === 0) return null;
+        const presentCount = frequenciesList.filter((f: any) => f.situacao === true).length;
+        return Math.round((presentCount / frequenciesList.length) * 100);
+    }, [frequenciesList]);
+
     const freqForDate = useMemo(() => {
         const rawDbDates = frequenciesList.map((f: any) => f.data);
         const match = frequenciesList.find((f: any) => {
@@ -82,7 +88,22 @@ export const StudentAttendanceRow = ({
     return (
         <View style={styles.container}>
             <View style={styles.leftCol}>
-                <Text style={styles.nameText} numberOfLines={1}>{studentName}</Text>
+                <View style={styles.nameContainer}>
+                    <Text style={styles.nameText} numberOfLines={1}>{studentName}</Text>
+                    {attendancePercentage !== null && (
+                        <View style={[
+                            styles.percentBadge,
+                            attendancePercentage >= 75 ? styles.percentBadgeGreen : styles.percentBadgeRed
+                        ]}>
+                            <Text style={[
+                                styles.percentBadgeText,
+                                attendancePercentage >= 75 ? styles.percentTextGreen : styles.percentTextRed
+                            ]}>
+                                {attendancePercentage}%
+                            </Text>
+                        </View>
+                    )}
+                </View>
                 <Text style={styles.matriculaText}>Matrícula: {studentMatricula}</Text>
                 
                 {/* Justification display if absent */}
@@ -176,11 +197,38 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
+    nameContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        marginBottom: 2,
+    },
     nameText: {
         fontSize: 15,
         fontWeight: "600",
         color: "#1f2937",
-        marginBottom: 2,
+        flexShrink: 1,
+    },
+    percentBadge: {
+        paddingVertical: 1.5,
+        paddingHorizontal: 5,
+        borderRadius: 4,
+    },
+    percentBadgeGreen: {
+        backgroundColor: "#def7ec",
+    },
+    percentBadgeRed: {
+        backgroundColor: "#fde8e8",
+    },
+    percentBadgeText: {
+        fontSize: 10,
+        fontWeight: "700",
+    },
+    percentTextGreen: {
+        color: "#0e6245",
+    },
+    percentTextRed: {
+        color: "#9b1c1c",
     },
     matriculaText: {
         fontSize: 12,

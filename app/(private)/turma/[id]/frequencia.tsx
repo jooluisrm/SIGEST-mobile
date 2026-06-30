@@ -9,20 +9,38 @@ import {
     Alert, 
     Modal, 
     TextInput,
-    Dimensions
+    Dimensions,
+    Platform
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQueries } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 
 import { useMatriculaDisciplinasByOfertaQuery } from "@/api/matriculadisciplina";
-import { createFrequencia, updateFrequencia } from "@/api/frequencia";
+import { createFrequencia, updateFrequencia, getFrequenciasByMatriculaDisciplina } from "@/api/frequencia";
 import { StudentAttendanceRow } from "@/components/gerenciar/frequencia-student-row";
 import { useOfertaDisciplinaQuery } from "@/api/ofertadisciplina";
 import { Frequencia } from "@/types/frequencia";
 import { useTurmaId } from "./context";
 
 const { height } = Dimensions.get("window");
+
+const AttendanceSkeleton = () => {
+    return (
+        <View style={styles.skeletonContainer}>
+            {[1, 2, 3, 4, 5].map((key) => (
+                <View key={key} style={styles.skeletonRow}>
+                    <View style={styles.skeletonLeft}>
+                        <View style={styles.skeletonName} />
+                        <View style={styles.skeletonMatricula} />
+                    </View>
+                    <View style={styles.skeletonRight} />
+                </View>
+            ))}
+        </View>
+    );
+};
 
 export default function TurmaFrequenciaScreen() {
     const id = useTurmaId();
@@ -49,6 +67,7 @@ export default function TurmaFrequenciaScreen() {
 
     const [isSaving, setIsSaving] = useState(false);
     const [saveProgress, setSaveProgress] = useState(0);
+    const [showDatePicker, setShowDatePicker] = useState(false);
 
     // Reset local states on classroom change
     useEffect(() => {
@@ -85,7 +104,22 @@ export default function TurmaFrequenciaScreen() {
         return matriculaDisciplinasRaw;
     }, [matriculaDisciplinasRaw, isDataMismatched]);
 
-    const isLoading = isLoadingStudents || isLoadingOffering || isDataMismatched;
+    // Fetch frequencies for all students in parallel
+    const studentQueries = useQueries({
+        queries: matriculaDisciplinas.map((md) => ({
+            queryKey: ["frequencias", "matricula-disciplina", md.id],
+            queryFn: () => getFrequenciasByMatriculaDisciplina(md.id),
+            enabled: !!md.id && !isLoadingStudents,
+            staleTime: 1000 * 10,
+        })),
+    });
+
+    const isLoadingFrequencies = useMemo(() => {
+        if (matriculaDisciplinas.length === 0) return false;
+        return studentQueries.some((q) => q.isLoading);
+    }, [studentQueries, matriculaDisciplinas]);
+
+    const isLoading = isLoadingOffering || isDataMismatched;
 
     // Callbacks for Row loaders & changes
     const handleRowLoad = useCallback((mdId: number, existingFreq: Frequencia | null) => {
@@ -165,6 +199,27 @@ export default function TurmaFrequenciaScreen() {
             return `${day} de ${months[parseInt(month, 10) - 1]}, ${year}`;
         } catch {
             return dateStr;
+        }
+    };
+
+    const parseDate = (dateStr: string) => {
+        if (!dateStr) return new Date();
+        try {
+            const parts = dateStr.split("-");
+            if (parts.length === 3) {
+                return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            }
+        } catch {}
+        return new Date();
+    };
+
+    const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
+        setShowDatePicker(Platform.OS === "ios");
+        if (date && event.type === "set") {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            setSelectedDate(`${year}-${month}-${day}`);
         }
     };
 
@@ -289,15 +344,31 @@ export default function TurmaFrequenciaScreen() {
                     <Ionicons name="chevron-back" size={24} color="#1D8C43" />
                 </Pressable>
                 
-                <View style={styles.dateInfo}>
-                    <Ionicons name="calendar-outline" size={16} color="#6b7280" style={{ marginRight: 6 }} />
+                <Pressable
+                    onPress={() => setShowDatePicker(true)}
+                    style={({ pressed }) => [
+                        styles.dateInfo,
+                        pressed && { opacity: 0.7 }
+                    ]}
+                    disabled={isSaving}
+                >
+                    <Ionicons name="calendar-outline" size={18} color="#52B28B" style={{ marginRight: 6 }} />
                     <Text style={styles.dateText}>{formatDisplayDate(selectedDate)}</Text>
-                </View>
+                </Pressable>
 
                 <Pressable onPress={() => handleAddDays(1)} style={styles.arrowButton} disabled={isSaving}>
                     <Ionicons name="chevron-forward" size={24} color="#1D8C43" />
                 </Pressable>
             </View>
+
+            {showDatePicker && (
+                <DateTimePicker
+                    value={parseDate(selectedDate)}
+                    mode="date"
+                    display="default"
+                    onChange={handleDateChange}
+                />
+            )}
 
             <View style={styles.legendRow}>
                 <View style={styles.legendItem}>
@@ -311,7 +382,10 @@ export default function TurmaFrequenciaScreen() {
             </View>
 
             {/* Attendance Roster */}
-            <FlatList
+            {isLoadingStudents || isLoadingFrequencies ? (
+                <AttendanceSkeleton />
+            ) : (
+                <FlatList
                 data={matriculaDisciplinas}
                 keyExtractor={(item) => String(item.id)}
                 renderItem={({ item }) => (
@@ -334,6 +408,7 @@ export default function TurmaFrequenciaScreen() {
                 }
                 showsVerticalScrollIndicator={false}
             />
+            )}
 
             {/* Bottom Actions */}
             <View style={styles.footer}>
@@ -439,6 +514,12 @@ const styles = StyleSheet.create({
     dateInfo: {
         flexDirection: "row",
         alignItems: "center",
+        backgroundColor: "#f3f4f6",
+        borderWidth: 1,
+        borderColor: "#e5e7eb",
+        borderRadius: 8,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
     },
     dateText: {
         fontSize: 15,
@@ -576,5 +657,41 @@ const styles = StyleSheet.create({
     confirmBtnText: {
         color: "#ffffff",
         fontWeight: "600",
+    },
+    skeletonContainer: {
+        paddingVertical: 4,
+    },
+    skeletonRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#ffffff",
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        borderRadius: 14,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: "#f3f4f6",
+    },
+    skeletonLeft: {
+        flex: 1,
+        gap: 6,
+    },
+    skeletonName: {
+        width: "60%",
+        height: 16,
+        backgroundColor: "#e5e7eb",
+        borderRadius: 4,
+    },
+    skeletonMatricula: {
+        width: "40%",
+        height: 12,
+        backgroundColor: "#e5e7eb",
+        borderRadius: 4,
+    },
+    skeletonRight: {
+        width: 78,
+        height: 36,
+        backgroundColor: "#e5e7eb",
+        borderRadius: 8,
     },
 });

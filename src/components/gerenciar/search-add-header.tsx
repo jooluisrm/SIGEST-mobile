@@ -12,9 +12,16 @@ type Props = {
     onChangeText: (text: string) => void;
     placeholder: string;
     onAddPress: () => void;
+    iconType?: "person" | "add";
 };
 
-export const SearchAddHeader = ({ value, onChangeText, placeholder, onAddPress }: Props) => {
+export const SearchAddHeader = ({ 
+    value, 
+    onChangeText, 
+    placeholder, 
+    onAddPress,
+    iconType = "add"
+}: Props) => {
     return (
         <View style={styles.container}>
             {/* Search Bar Input Container */}
@@ -39,7 +46,11 @@ export const SearchAddHeader = ({ value, onChangeText, placeholder, onAddPress }
                 ]}
                 onPress={onAddPress}
             >
-                <Ionicons name="person-add-outline" size={22} color="#ffffff" />
+                <Ionicons 
+                    name={iconType === "person" ? "person-add-outline" : "add-outline"} 
+                    size={iconType === "person" ? 22 : 26} 
+                    color="#ffffff" 
+                />
             </Pressable>
         </View>
     );

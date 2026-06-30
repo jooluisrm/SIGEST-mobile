@@ -9,21 +9,39 @@ import {
     Alert, 
     Modal, 
     TextInput,
-    Dimensions
+    Dimensions,
+    Platform
 } from "react-native";
+import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQueries } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/context/AuthContext";
 import { useOfertaDisciplinasInfiniteQuery } from "@/api/ofertadisciplina";
 import { useMatriculaDisciplinasByOfertaQuery } from "@/api/matriculadisciplina";
-import { createFrequencia, updateFrequencia } from "@/api/frequencia";
+import { createFrequencia, updateFrequencia, getFrequenciasByMatriculaDisciplina } from "@/api/frequencia";
 import { RestrictedAccess } from "@/components/restricted-access";
 import { StudentAttendanceRow } from "@/components/gerenciar/frequencia-student-row";
 import { OfertaDisciplina } from "@/types/ofertadisciplina";
 import { Frequencia } from "@/types/frequencia";
 
 const { height } = Dimensions.get("window");
+
+const AttendanceSkeleton = () => {
+    return (
+        <View style={styles.skeletonContainer}>
+            {[1, 2, 3, 4, 5].map((key) => (
+                <View key={key} style={styles.skeletonRow}>
+                    <View style={styles.skeletonLeft}>
+                        <View style={styles.skeletonName} />
+                        <View style={styles.skeletonMatricula} />
+                    </View>
+                    <View style={styles.skeletonRight} />
+                </View>
+            ))}
+        </View>
+    );
+};
 
 export default function FrequenciaScreen() {
     const router = useRouter();
@@ -63,6 +81,7 @@ export default function FrequenciaScreen() {
     // Saving progress states
     const [isSaving, setIsSaving] = useState(false);
     const [saveProgress, setSaveProgress] = useState(0);
+    const [showDatePicker, setShowDatePicker] = useState(false);
 
     // Debounce search in offering picker
     useEffect(() => {
@@ -108,6 +127,21 @@ export default function FrequenciaScreen() {
         if (Array.isArray(matriculaDisciplinasData.data)) return matriculaDisciplinasData.data;
         return [];
     }, [matriculaDisciplinasData]);
+
+    // Fetch frequencies for all students in parallel
+    const studentQueries = useQueries({
+        queries: matriculaDisciplinas.map((md) => ({
+            queryKey: ["frequencias", "matricula-disciplina", md.id],
+            queryFn: () => getFrequenciasByMatriculaDisciplina(md.id),
+            enabled: !!md.id && !isLoadingStudents,
+            staleTime: 1000 * 10,
+        })),
+    });
+
+    const isLoadingFrequencies = useMemo(() => {
+        if (matriculaDisciplinas.length === 0) return false;
+        return studentQueries.some((q) => q.isLoading);
+    }, [studentQueries, matriculaDisciplinas]);
 
     // Reset student states when offering or date changes
 
@@ -194,6 +228,27 @@ export default function FrequenciaScreen() {
             setSelectedDate(`${year}-${month}-${day}`);
         } catch (e) {
             console.error(e);
+        }
+    };
+
+    const parseDate = (dateStr: string) => {
+        if (!dateStr) return new Date();
+        try {
+            const parts = dateStr.split("-");
+            if (parts.length === 3) {
+                return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            }
+        } catch {}
+        return new Date();
+    };
+
+    const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
+        setShowDatePicker(Platform.OS === "ios");
+        if (date && event.type === "set") {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            setSelectedDate(`${year}-${month}-${day}`);
         }
     };
 
@@ -365,25 +420,38 @@ export default function FrequenciaScreen() {
 
             {/* Date navigation bar */}
             <View style={styles.dateSelectorContainer}>
-                <Pressable onPress={() => handleAddDays(-1)} style={styles.dateNavButton}>
+                <Pressable onPress={() => handleAddDays(-1)} style={styles.dateNavButton} disabled={isSaving}>
                     <Ionicons name="chevron-back" size={22} color="#1D8C43" />
                 </Pressable>
-                <View style={styles.dateDisplayButton}>
+                <Pressable 
+                    onPress={() => setShowDatePicker(true)} 
+                    style={({ pressed }) => [
+                        styles.dateDisplayButton,
+                        pressed && { opacity: 0.7 }
+                    ]}
+                    disabled={isSaving}
+                >
                     <Ionicons name="calendar-outline" size={18} color="#1D8C43" style={{ marginRight: 8 }} />
                     <Text style={styles.dateDisplayText}>{formatDisplayDate(selectedDate)}</Text>
-                </View>
-                <Pressable onPress={() => handleAddDays(1)} style={styles.dateNavButton}>
+                </Pressable>
+                <Pressable onPress={() => handleAddDays(1)} style={styles.dateNavButton} disabled={isSaving}>
                     <Ionicons name="chevron-forward" size={22} color="#1D8C43" />
                 </Pressable>
             </View>
 
+            {showDatePicker && (
+                <DateTimePicker
+                    value={parseDate(selectedDate)}
+                    mode="date"
+                    display="default"
+                    onChange={handleDateChange}
+                />
+            )}
+
             {/* Students rolls list */}
             {selectedOferta ? (
-                isLoadingStudents && matriculaDisciplinas.length === 0 ? (
-                    <View style={styles.centerContainer}>
-                        <ActivityIndicator size="large" color="#52B28B" />
-                        <Text style={styles.loadingText}>Carregando alunos enturmados...</Text>
-                    </View>
+                isLoadingStudents || isLoadingFrequencies ? (
+                    <AttendanceSkeleton />
                 ) : (
                     <FlatList
                         data={matriculaDisciplinas}
@@ -947,5 +1015,41 @@ const styles = StyleSheet.create({
         color: "#ffffff",
         fontSize: 14,
         fontWeight: "600",
+    },
+    skeletonContainer: {
+        paddingVertical: 4,
+    },
+    skeletonRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#ffffff",
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        borderRadius: 14,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: "#f3f4f6",
+    },
+    skeletonLeft: {
+        flex: 1,
+        gap: 6,
+    },
+    skeletonName: {
+        width: "60%",
+        height: 16,
+        backgroundColor: "#e5e7eb",
+        borderRadius: 4,
+    },
+    skeletonMatricula: {
+        width: "40%",
+        height: 12,
+        backgroundColor: "#e5e7eb",
+        borderRadius: 4,
+    },
+    skeletonRight: {
+        width: 78,
+        height: 36,
+        backgroundColor: "#e5e7eb",
+        borderRadius: 8,
     },
 });

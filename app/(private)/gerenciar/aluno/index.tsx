@@ -75,6 +75,7 @@ export default function Aluno() {
                 onChangeText={handleSearchChange}
                 placeholder="Buscar por nome de aluno"
                 onAddPress={handleAddPress}
+                iconType="person"
             />
 
             {/* Aviso visual caso o termo de busca seja muito curto */}
