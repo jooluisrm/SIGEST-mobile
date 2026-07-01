@@ -66,3 +66,44 @@ export type LoginApiResponse =
   | LoginResponseSuccess
   | LoginResponseError
   | LoginResponseValidationError;
+
+/**
+ * Solicitacao de recuperacao de senha (Esqueceu a senha)
+ */
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  status: boolean;
+  message: string;
+  data?: any;
+}
+
+/**
+ * Validacao do codigo de redefinicao enviado por email
+ */
+export interface ResetPasswordValidateCodeRequest {
+  email: string;
+  code: string;
+}
+
+export interface ResetPasswordValidateCodeResponse {
+  status: boolean;
+  message: string;
+}
+
+/**
+ * Redefinicao final de senha
+ */
+export interface ResetPasswordCodeRequest {
+  email: string;
+  code: string;
+  password?: string;
+}
+
+export interface ResetPasswordCodeResponse {
+  status: boolean;
+  message: string;
+  user?: any;
+}

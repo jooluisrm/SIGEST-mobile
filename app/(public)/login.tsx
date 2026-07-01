@@ -16,6 +16,7 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../src/context/AuthContext";
 
 const { width } = Dimensions.get("window");
@@ -25,6 +26,7 @@ export default function Login() {
     const [password, setPassword] = useState("");
     const [isEmailFocused, setIsEmailFocused] = useState(false);
     const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+    const [secureText, setSecureText] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const [generalError, setGeneralError] = useState("");
     const [fieldErrors, setFieldErrors] = useState<{ email?: string[]; password?: string[] }>({});
@@ -72,11 +74,7 @@ export default function Login() {
     };
 
     const handleForgotPassword = () => {
-        console.log("Recuperar senha");
-    };
-
-    const handleRegister = () => {
-        console.log("Ir para registro");
+        router.push("/recuperar-senha");
     };
 
     return (
@@ -134,23 +132,36 @@ export default function Login() {
                                 ) : null}
 
                                 {/* Password Input */}
-                                <TextInput
-                                    style={[
-                                        styles.input,
-                                        isPasswordFocused && styles.inputFocused,
-                                        fieldErrors.password && styles.inputError
-                                    ]}
-                                    placeholder="Senha"
-                                    placeholderTextColor="rgba(30, 58, 39, 0.6)"
-                                    value={password}
-                                    onChangeText={setPassword}
-                                    secureTextEntry
-                                    autoCapitalize="none"
-                                    autoCorrect={false}
-                                    onFocus={() => setIsPasswordFocused(true)}
-                                    onBlur={() => setIsPasswordFocused(false)}
-                                    editable={!isLoading}
-                                />
+                                <View style={[
+                                    styles.passwordContainer,
+                                    isPasswordFocused && styles.passwordContainerFocused,
+                                    fieldErrors.password && styles.passwordContainerError
+                                ]}>
+                                    <TextInput
+                                        style={styles.inputPassword}
+                                        placeholder="Senha"
+                                        placeholderTextColor="rgba(30, 58, 39, 0.6)"
+                                        value={password}
+                                        onChangeText={setPassword}
+                                        secureTextEntry={secureText}
+                                        autoCapitalize="none"
+                                        autoCorrect={false}
+                                        onFocus={() => setIsPasswordFocused(true)}
+                                        onBlur={() => setIsPasswordFocused(false)}
+                                        editable={!isLoading}
+                                    />
+                                    <Pressable 
+                                        onPress={() => setSecureText(!secureText)}
+                                        style={styles.eyeIcon}
+                                        disabled={isLoading}
+                                    >
+                                        <Ionicons 
+                                            name={secureText ? "eye-off-outline" : "eye-outline"} 
+                                            size={20} 
+                                            color="rgba(30, 58, 39, 0.7)" 
+                                        />
+                                    </Pressable>
+                                </View>
                                 {fieldErrors.password ? (
                                     <Text style={styles.fieldErrorText}>{fieldErrors.password[0]}</Text>
                                 ) : null}
@@ -182,21 +193,6 @@ export default function Login() {
                                     disabled={isLoading}
                                 >
                                     <Text style={styles.forgotPasswordText}>Recuperar Senha</Text>
-                                </Pressable>
-
-                                {/* Register Link */}
-                                <Pressable
-                                    style={({ pressed }) => [
-                                        styles.linkPressable,
-                                        pressed && styles.linkPressed
-                                    ]}
-                                    onPress={handleRegister}
-                                    disabled={isLoading}
-                                >
-                                    <Text style={styles.registerText}>
-                                        <Text style={styles.registerTextGreen}>Sem cadastro? </Text>
-                                        <Text style={styles.registerTextWhite}>Registre-se</Text>
-                                    </Text>
                                 </Pressable>
                             </View>
                         </ScrollView>
@@ -309,18 +305,40 @@ const styles = StyleSheet.create({
         textDecorationLine: "underline",
         textAlign: "center",
     },
-    registerText: {
-        fontSize: 14,
+    passwordContainer: {
+        position: 'relative',
+        marginBottom: 16,
+        height: 52,
+        backgroundColor: "rgba(255, 255, 255, 0.4)",
+        borderWidth: 1.5,
+        borderColor: "rgba(74, 137, 98, 0.3)",
+        borderRadius: 26,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+    },
+    passwordContainerFocused: {
+        borderColor: "#0E6F37",
+        backgroundColor: "rgba(255, 255, 255, 0.6)",
+    },
+    passwordContainerError: {
+        borderColor: "#ff5252",
+        backgroundColor: "rgba(211, 47, 47, 0.15)",
+    },
+    inputPassword: {
+        flex: 1,
+        height: "100%",
+        fontSize: 16,
+        color: "#16331F",
+        fontWeight: "500",
         textAlign: "center",
-        marginTop: 4,
+        paddingLeft: 24,
     },
-    registerTextGreen: {
-        color: "#0E562A", // Bold dark green for "Sem cadastro?"
-        fontWeight: "bold",
-    },
-    registerTextWhite: {
-        color: "#ffffff",
-        fontWeight: "bold",
+    eyeIcon: {
+        width: 24,
+        height: "100%",
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     errorBanner: {
         backgroundColor: "rgba(211, 47, 47, 0.25)",

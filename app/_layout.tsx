@@ -83,6 +83,15 @@ function NavigationLayout() {
                     headerTintColor: "#fff"
                 }}
             />
+            <Stack.Screen
+                name="(public)/recuperar-senha"
+                options={{
+                    headerShown: true,
+                    headerTransparent: true,
+                    headerTitle: "",
+                    headerTintColor: "#fff"
+                }}
+            />
 
             <Stack.Screen name="(private)" options={{ headerShown: false }} />
         </Stack>
